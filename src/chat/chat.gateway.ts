@@ -22,14 +22,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly eventBus: EventService,
     private readonly authService: AuthService,
   ) {
-    this.eventBus.subscribe((event) => {
-      if (event.type === 'userLoggedIn') {
-        this.user = event.payload;
-        console.log('User logged in:', this.user);
-      }
-    });
-    this.topicService.onTopicCreated().subscribe(() => {
-      this.refreshDatabase();
+    this.topicService.onTopicCreated().subscribe(({ user }) => {
+      this.refreshDatabase(user);
     });
   }
 
@@ -40,7 +34,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (event.type === 'userLoggedIn') {
         if (event.payload) {
           console.log('CONNECTION SUCCESS from server 1');
-          await this.refreshDatabase(socket);
+          await this.refreshDatabase(event.payload, socket);
         } else {
           this.handleDisconnect();
         }
@@ -52,9 +46,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log('CONNECTION REMOVED');
   }
 
-  async refreshDatabase(socket?: Socket) {
+  async refreshDatabase(user?: User, socket?: Socket) {
     console.log('Refreshing database...');
-    const topics = await this.topicService.listTopics(this.user);
+    const topics = await this.topicService.listTopics(user);
     if (socket) {
       socket.emit('topics', topics);
     } else {

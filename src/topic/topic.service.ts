@@ -7,7 +7,7 @@ import { CreateTopicDto } from './dto';
 
 @Injectable()
 export class TopicService {
-  private readonly topicCreatedSubject = new Subject<void>();
+  private readonly topicCreatedSubject = new Subject<{ user: User }>();
 
   constructor(
     private readonly prismaService: PrismaService,
@@ -25,7 +25,7 @@ export class TopicService {
         userId: user.id,
       },
     });
-    this.topicCreatedSubject.next();
+    this.topicCreatedSubject.next({ user });
     return topic;
   }
 
