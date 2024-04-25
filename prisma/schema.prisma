@@ -20,9 +20,11 @@ model User {
   active    Boolean  @default(true)
   role      ERole    @default(USER)
 
-  email    String? @unique
-  password String?
-  Topic    Topic[]
+  email       String?       @unique
+  password    String?
+  Topic       Topic[]
+  Box         Box[]
+  TotalEnergy TotalEnergy[]
 }
 
 model Topic {
@@ -33,4 +35,26 @@ model Topic {
   user      User?    @relation(fields: [userId], references: [id])
 
   topicName String
+}
+
+model Box {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  serialNumber String?
+  userId       String  @db.ObjectId
+  user         User?   @relation(fields: [userId], references: [id])
+  photoProof   String?
+}
+
+model TotalEnergy {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  pvPower           String?
+  loadPower         String?
+  gridPowerUsed     String?
+  gridPowerExposed  String?
+  batteryCharged    String?
+  batteryDischarged String?
+  date              DateTime
+  topic             String?
+  userId            String   @db.ObjectId
+  user              User?    @relation(fields: [userId], references: [id])
 }

@@ -7,6 +7,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -19,6 +20,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiCreatedResponse({ description: 'User created successfully' })
+  @ApiOperation({ summary: 'user registration' })
   @ApiConflictResponse({ description: 'User already exists' })
   @ApiBody({ type: CreateUserDto })
   @Post('sign-up')
@@ -29,6 +31,7 @@ export class AuthController {
   @ApiOkResponse({ description: 'User logged in successfully' })
   @ApiForbiddenResponse({ description: 'Forbidden User' })
   @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiOperation({ summary: 'user login' })
   @ApiBody({ type: LoginUserDto })
   @HttpCode(200)
   @Post('login')

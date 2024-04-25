@@ -29,7 +29,12 @@ export class TopicService {
     return topic;
   }
 
-  async listTopics(user: User): Promise<Topic> {
+  async listTopics(): Promise<Topic[]> {
+    const topics = await this.prismaService.topic.findMany();
+    return topics;
+  }
+
+  async topics(user: User): Promise<Topic> {
     const topics = await this.prismaService.topic.findFirst({
       where: {
         userId: user.id,

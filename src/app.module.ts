@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { TopicModule } from './topic/topic.module';
 import { EventModule } from './event/event.module';
+import { EnergyModule } from './energy/energy.module';
+import { BoxModule } from './box/box.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { EventModule } from './event/event.module';
     ChatModule,
     TopicModule,
     EventModule,
+    EnergyModule,
+    BoxModule,
   ],
   controllers: [],
   providers: [
