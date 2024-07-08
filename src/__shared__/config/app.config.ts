@@ -14,6 +14,12 @@ export function appConfig(): IAppConfig {
     jwt: {
       secret: process.env.JWT_SECRET,
     },
+    redex: {
+      url: process.env.REDEX_API_URL,
+      apiKey: process.env.REDEX_API_KEY,
+      clientId: process.env.REDEX_CLIENT_ID,
+      clientSecret: process.env.REDEX_CLIENT_SECRET,
+    },
   };
 }
 

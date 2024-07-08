@@ -11,6 +11,7 @@ import * as argon from 'argon2';
 import { IAppConfig } from 'src/__shared__/interfaces';
 import { EventService } from 'src/event/event.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StepsService } from 'src/steps/steps.service';
 import { CreateUserDto, LoginUserDto } from './dto';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class AuthService {
     private readonly Jwt: JwtService,
     private readonly config: ConfigService<IAppConfig>,
     private readonly eventBus: EventService,
+    private readonly stepsService: StepsService,
   ) {}
 
   private async generateToken(user: User) {
@@ -51,6 +53,7 @@ export class AuthService {
         ...dto,
       },
     });
+
     return this.generateToken(user);
   }
 

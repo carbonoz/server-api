@@ -18,7 +18,7 @@ export class BoxService {
     return box;
   }
 
-  async getBoxesRegistered(user: User): Promise<Box[]> {
+  async getBoxesRegistered(user: User): Promise<Array<Box>> {
     const boxes = await this.prismaService.box.findMany({
       where: {
         userId: user.id,

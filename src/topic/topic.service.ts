@@ -29,7 +29,7 @@ export class TopicService {
     return topic;
   }
 
-  async listTopics(): Promise<Topic[]> {
+  async listTopics(): Promise<Array<Topic>> {
     const topics = await this.prismaService.topic.findMany();
     return topics;
   }
