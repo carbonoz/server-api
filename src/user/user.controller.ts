@@ -30,6 +30,7 @@ import { RegisterUserAssetsDto } from 'src/asset/dto';
 import { AllowRoles, GetUser } from 'src/auth/decorators';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { BoxService } from 'src/box/box.service';
 import { RegisterUserInfoDto } from 'src/information/dto';
 import { InformationService } from 'src/information/information.service';
 import { RedexService } from 'src/redex/redex.service';
@@ -47,6 +48,7 @@ export class UserController {
     private readonly assetService: AssetService,
     private readonly additionalInfo: InformationService,
     private readonly redexService: RedexService,
+    private readonly boxService: BoxService,
   ) {}
 
   @ApiOkResponse({
@@ -144,5 +146,17 @@ export class UserController {
   ) {
     const result = await this.redexService.uplaodFile(file, user);
     return new GenericResponse('File uplaoded', result);
+  }
+
+  @ApiOkResponse({
+    description: 'user Ports retrieved successfully',
+    type: GenericResponse,
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'user ports' })
+  @Get('ports')
+  async getUserPorts(@GetUser() user: User) {
+    const result = await this.boxService.getUserPorts(user);
+    return new GenericResponse('user-ports', result);
   }
 }

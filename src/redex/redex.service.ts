@@ -2,6 +2,8 @@ import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
+import { addDays, startOfDay } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import * as FormData from 'form-data';
 import { lastValueFrom } from 'rxjs';
 import { IAppConfig } from 'src/__shared__/interfaces';
@@ -105,5 +107,55 @@ export class RedexService {
         error: error.message,
       });
     }
+  }
+
+  async getTotals() {
+    const timeZone = 'Indian/Mauritius';
+    const normalizeDate = () => {
+      const startOfDayInTimeZone = startOfDay(new Date());
+      const formattedStartOfDay = formatInTimeZone(
+        startOfDayInTimeZone,
+        timeZone,
+        "yyyy-MM-dd'T'HH:mm:ssXXX",
+      );
+      return formattedStartOfDay;
+    };
+
+    const date = normalizeDate();
+
+    const users = await this.prismaService.user.findMany({
+      include: {
+        Box: true,
+        UserPorts: true,
+      },
+    });
+    const results = [];
+    for (const user of users) {
+      const { Box, UserPorts } = user;
+
+      for (const port of UserPorts) {
+        const totalEnergy = await this.prismaService.totalEnergy.findMany({
+          where: {
+            port: port.port,
+            date: {
+              gte: date,
+              lt: addDays(new Date(date), 1).toISOString(),
+            },
+          },
+          select: {
+            pvPower: true,
+            date: true,
+          },
+        });
+
+        results.push({
+          userId: user.id,
+          serialNumber: Box.map((b) => b.serialNumber).join(', '),
+          port: port.port,
+          totalEnergy,
+        });
+      }
+    }
+    return results;
   }
 }

@@ -40,7 +40,7 @@ export class BoxController {
   @Post('register')
   async topic(@Body() dto: RegisterBoxDto, @GetUser() user: User) {
     const result = await this.boxService.registerBox(dto, user);
-    return new GenericResponse('box register', result);
+    return result;
   }
   @ApiOkResponse({ description: 'boxes retrieved successfully' })
   @HttpCode(200)

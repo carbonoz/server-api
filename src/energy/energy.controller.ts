@@ -32,4 +32,36 @@ export class EnergyController {
     const result = await this.energyService.getTotalsEnergy(user);
     return new GenericResponse('energy-data', result);
   }
+
+  @ApiOkResponse({
+    description: 'energy data for last 30 days retrieved successfully',
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'energy data for last 30 days ' })
+  @Get('total/30')
+  async topicsForlast30Days(@GetUser() user: User) {
+    const result = await this.energyService.getTotalsEnergyLast30Days(user);
+    return new GenericResponse('energy-data for 30 days', result);
+  }
+  @ApiOkResponse({
+    description: 'energy data for last 12 months retrieved successfully',
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'energy data for last 12 months ' })
+  @Get('total/12')
+  async topicsForlast12Months(@GetUser() user: User) {
+    const result = await this.energyService.getTotalsEnergyLast12Months(user);
+    return new GenericResponse('energy-data for last 12 months', result);
+  }
+
+  @ApiOkResponse({
+    description: 'energy data for last 10 years retrieved successfully',
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'energy data for last 10 years ' })
+  @Get('total/year/10')
+  async topicsForlastTenYears(@GetUser() user: User) {
+    const result = await this.energyService.getTotalsEnergyLast10Years(user);
+    return new GenericResponse('energy-data for last 10 years', result);
+  }
 }
