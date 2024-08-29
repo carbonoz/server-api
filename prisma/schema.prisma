@@ -13,6 +13,20 @@ enum ERole {
   ADMIN
 }
 
+enum EFuelType {
+  SOLAR
+  WIND
+  HYDRO
+}
+
+enum ESteps {
+  USER_INFO
+  ASSET_INFO
+  REDEX_FORM
+  UPLOAD_FORM
+  LAST_STEP
+}
+
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   createdAt DateTime @default(now())
@@ -20,9 +34,16 @@ model User {
   active    Boolean  @default(true)
   role      ERole    @default(USER)
 
-  email    String? @unique
-  password String?
-  Topic    Topic[]
+  email                     String?                     @unique
+  password                  String?
+  Topic                     Topic[]
+  Box                       Box[]
+  TotalEnergy               TotalEnergy[]
+  UserAssetInformation      UserAssetInformation[]
+  UserAdditionalInformation UserAdditionalInformation[]
+  UserSteps                 UserSteps[]
+  RedexInformation          RedexInformation[]
+  UserPorts                 UserPorts[]
 }
 
 model Topic {
@@ -31,6 +52,89 @@ model Topic {
   updatedAt DateTime @default(now())
   userId    String   @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id])
-
   topicName String
+}
+
+model Box {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  serialNumber String?
+  userId       String   @db.ObjectId
+  user         User?    @relation(fields: [userId], references: [id])
+  photoProof   String[]
+}
+
+model TotalEnergy {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  pvPower           String?
+  loadPower         String?
+  gridIn            String?
+  gridOut           String?
+  batteryCharged    String?
+  batteryDischarged String?
+  date              String
+  topic             String?
+  port              String?
+  userId            String  @db.ObjectId
+  user              User?   @relation(fields: [userId], references: [id])
+
+  @@unique([date, userId])
+}
+
+model UserAssetInformation {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  assetOwner String?
+  assetName  String?
+  fuelType   EFuelType @default(SOLAR)
+  country    String?
+  address    String?
+  latitude   Float?
+  longitude  Float?
+  capacity   Float?
+  userId     String    @db.ObjectId
+  user       User?     @relation(fields: [userId], references: [id])
+}
+
+model UserAdditionalInformation {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  jobTitle   String?
+  names      String?
+  address    String?
+  postalCode String?
+  city       String?
+  country    String?
+  phone      String?
+  userId     String  @db.ObjectId
+  formUrl    String?
+  user       User?   @relation(fields: [userId], references: [id])
+}
+
+model UserSteps {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id])
+  step      ESteps   @default(USER_INFO)
+  isFile    Boolean? @default(false)
+  status    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model RedexInformation {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String  @db.ObjectId
+  user           User?   @relation(fields: [userId], references: [id])
+  redexFileId    String?
+  ValidationCode String?
+}
+
+model UserPorts {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+  userId       String   @db.ObjectId
+  user         User?    @relation(fields: [userId], references: [id])
+  port         String
+  mqttUsername String?
+  mqttPassword String?
+  mqttPort     Int?
 }

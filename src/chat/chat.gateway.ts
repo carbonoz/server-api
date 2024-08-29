@@ -4,8 +4,6 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-
-import { User } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { EventService } from 'src/event/event.service';
@@ -14,21 +12,13 @@ import { ChatService } from './chat.service';
 
 @WebSocketGateway({ cors: { origin: ['http:localhost:8000'] } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  private user: User;
-
   constructor(
     private readonly chatService: ChatService,
     private readonly topicService: TopicService,
     private readonly eventBus: EventService,
     private readonly authService: AuthService,
   ) {
-    this.eventBus.subscribe((event) => {
-      if (event.type === 'userLoggedIn') {
-        this.user = event.payload;
-        console.log('User logged in:', this.user);
-      }
-    });
-    this.topicService.onTopicCreated().subscribe(() => {
+    this.topicService.onTopicCreated().subscribe(({ user }) => {
       this.refreshDatabase();
     });
   }
@@ -46,6 +36,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       }
     });
+    this.refreshDatabase();
   }
 
   handleDisconnect() {
@@ -53,8 +44,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async refreshDatabase(socket?: Socket) {
-    console.log('Refreshing database...');
-    const topics = await this.topicService.listTopics(this.user);
+    const topics = await this.topicService.listTopics();
     if (socket) {
       socket.emit('topics', topics);
     } else {

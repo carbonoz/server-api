@@ -22,10 +22,15 @@ export class AuthService {
     private readonly eventBus: EventService,
   ) {}
 
-  private async generateToken(user: User) {
+  public generateToken(
+    user: User,
+    userPort?: string,
+  ): {
+    data: { user: User; token: string };
+  } {
     const { id, role, email } = user;
     const token = this.Jwt.sign(
-      { id, role, email },
+      { id, role, email, userPort },
       { secret: this.config.get('jwt').secret },
     );
     delete user.password;
@@ -51,6 +56,7 @@ export class AuthService {
         ...dto,
       },
     });
+
     return this.generateToken(user);
   }
 
@@ -60,9 +66,17 @@ export class AuthService {
         email: dto.email,
       },
     });
+
     if (!user) throw new NotFoundException('User not found');
     else if (!(await argon.verify(user.password, dto.password))) {
       throw new ForbiddenException('Wrong User password');
-    } else return this.generateToken(user);
+    } else {
+      const userPort = await this.prismaService.userPorts.findFirst({
+        where: {
+          userId: user.id,
+        },
+      });
+      return this.generateToken(user, userPort?.port);
+    }
   }
 }

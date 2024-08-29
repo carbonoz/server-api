@@ -7,7 +7,7 @@ import { CreateTopicDto } from './dto';
 
 @Injectable()
 export class TopicService {
-  private readonly topicCreatedSubject = new Subject<void>();
+  private readonly topicCreatedSubject = new Subject<{ user: User }>();
 
   constructor(
     private readonly prismaService: PrismaService,
@@ -25,11 +25,16 @@ export class TopicService {
         userId: user.id,
       },
     });
-    this.topicCreatedSubject.next();
+    this.topicCreatedSubject.next({ user });
     return topic;
   }
 
-  async listTopics(user: User): Promise<Topic> {
+  async listTopics(): Promise<Array<Topic>> {
+    const topics = await this.prismaService.topic.findMany();
+    return topics;
+  }
+
+  async topics(user: User): Promise<Topic> {
     const topics = await this.prismaService.topic.findFirst({
       where: {
         userId: user.id,
