@@ -1,6 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { TotalEnergy, User } from '@prisma/client';
-import { endOfDay, parseISO, startOfDay, subDays } from 'date-fns';
+import {
+  endOfDay,
+  endOfMonth,
+  endOfYear,
+  format,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+  startOfYear,
+  subDays,
+  subMonths,
+  subYears,
+} from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -214,10 +226,199 @@ export class EnergyService {
   }
 
   async getTotalsEnergyLast12Months(user: User): Promise<Array<TotalEnergy>> {
-    return this.getTotalsForDateRange(user, 12, true);
+    const userPorts = await this.prismaService.userPorts.findFirst({
+      where: { userId: user.id },
+    });
+
+    const today = new Date();
+    const startDate = subMonths(today, 11); // 12 months including this month
+
+    const timezone = 'Indian/Mauritius';
+
+    const totals = await this.prismaService.totalEnergy.findMany({
+      where: {
+        AND: [
+          { OR: [{ userId: user.id }, { port: userPorts?.port }] },
+          {
+            date: {
+              gte: formatInTimeZone(
+                startOfMonth(startDate),
+                timezone,
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+              ),
+              lte: formatInTimeZone(
+                endOfMonth(today),
+                timezone,
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+              ),
+            },
+          },
+        ],
+      },
+    });
+
+    const monthlyTotals: { [key: string]: TotalEnergy } = {};
+
+    for (let i = 0; i < 12; i++) {
+      const currentMonth = subMonths(today, 11 - i);
+      const formattedMonth = format(startOfMonth(currentMonth), 'yyyy-MM');
+
+      monthlyTotals[formattedMonth] = {
+        id: uuidv4(), // Generate a unique ID
+        pvPower: '0',
+        loadPower: '0',
+        gridIn: '0',
+        gridOut: '0',
+        batteryCharged: '0',
+        batteryDischarged: '0',
+        date: `${formattedMonth}-01T00:00:00Z`,
+        topic: null,
+        port: userPorts?.port || '',
+        userId: user.id,
+      };
+    }
+
+    totals.forEach((t) => {
+      const totalDate = format(parseISO(t.date), 'yyyy-MM');
+      if (monthlyTotals[totalDate]) {
+        monthlyTotals[totalDate] = {
+          ...monthlyTotals[totalDate],
+          pvPower: (
+            parseFloat(monthlyTotals[totalDate].pvPower) +
+            parseFloat(t.pvPower || '0')
+          ).toString(),
+          loadPower: (
+            parseFloat(monthlyTotals[totalDate].loadPower) +
+            parseFloat(t.loadPower || '0')
+          ).toString(),
+          gridIn: (
+            parseFloat(monthlyTotals[totalDate].gridIn) +
+            parseFloat(t.gridIn || '0')
+          ).toString(),
+          gridOut: (
+            parseFloat(monthlyTotals[totalDate].gridOut) +
+            parseFloat(t.gridOut || '0')
+          ).toString(),
+          batteryCharged: (
+            parseFloat(monthlyTotals[totalDate].batteryCharged) +
+            parseFloat(t.batteryCharged || '0')
+          ).toString(),
+          batteryDischarged: (
+            parseFloat(monthlyTotals[totalDate].batteryDischarged) +
+            parseFloat(t.batteryDischarged || '0')
+          ).toString(),
+        };
+      }
+    });
+
+    const result: Array<TotalEnergy> = Object.keys(monthlyTotals).map(
+      (month) => ({
+        ...monthlyTotals[month],
+        id: uuidv4(), // Generate a unique ID
+        date: `${month}-01T00:00:00Z`,
+      }),
+    );
+
+    return result.reverse(); // Reverse to make the most recent month first
   }
 
   async getTotalsEnergyLast10Years(user: User): Promise<Array<TotalEnergy>> {
-    return this.getTotalsForDateRange(user, 10, true);
+    const userPorts = await this.prismaService.userPorts.findFirst({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    const today = new Date();
+    const startDate = subYears(today, 9); // 10 years including this year
+
+    const timezone = 'Indian/Mauritius';
+
+    const totals = await this.prismaService.totalEnergy.findMany({
+      where: {
+        AND: [
+          { OR: [{ userId: user.id }, { port: userPorts?.port }] },
+          {
+            date: {
+              gte: formatInTimeZone(
+                startOfYear(startDate),
+                timezone,
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+              ),
+              lte: formatInTimeZone(
+                endOfYear(today),
+                timezone,
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+              ),
+            },
+          },
+        ],
+      },
+    });
+
+    const yearlyTotals: Record<
+      string,
+      {
+        pvPower: number;
+        loadPower: number;
+        gridIn: number;
+        gridOut: number;
+        batteryCharged: number;
+        batteryDischarged: number;
+      }
+    > = {};
+
+    for (let i = 0; i < 10; i++) {
+      const currentYear = subYears(today, 9 - i);
+      const startOfYearDate = startOfYear(currentYear);
+      const formattedYear = format(startOfYearDate, 'yyyy');
+
+      yearlyTotals[formattedYear] = {
+        pvPower: 0,
+        loadPower: 0,
+        gridIn: 0,
+        gridOut: 0,
+        batteryCharged: 0,
+        batteryDischarged: 0,
+      };
+
+      totals.forEach((t) => {
+        const totalYear = format(parseISO(t.date), 'yyyy');
+
+        if (totalYear === formattedYear) {
+          yearlyTotals[formattedYear].pvPower += parseFloat(t.pvPower || '0');
+          yearlyTotals[formattedYear].loadPower += parseFloat(
+            t.loadPower || '0',
+          );
+          yearlyTotals[formattedYear].gridIn += parseFloat(t.gridIn || '0');
+          yearlyTotals[formattedYear].gridOut += parseFloat(t.gridOut || '0');
+          yearlyTotals[formattedYear].batteryCharged += parseFloat(
+            t.batteryCharged || '0',
+          );
+          yearlyTotals[formattedYear].batteryDischarged += parseFloat(
+            t.batteryDischarged || '0',
+          );
+        }
+      });
+    }
+
+    // Convert yearlyTotals to an array format
+    const result: Array<TotalEnergy> = Object.keys(yearlyTotals).map(
+      (year) => ({
+        id: uuidv4(),
+        pvPower: yearlyTotals[year].pvPower.toString(),
+        loadPower: yearlyTotals[year].loadPower.toString(),
+        gridIn: yearlyTotals[year].gridIn.toString(),
+        gridOut: yearlyTotals[year].gridOut.toString(),
+        batteryCharged: yearlyTotals[year].batteryCharged.toString(),
+        batteryDischarged: yearlyTotals[year].batteryDischarged.toString(),
+        date: `${year}-01-01T00:00:00Z`, // Use the start of the year
+        topic: null,
+        port: userPorts?.port || '',
+        userId: user.id,
+      }),
+    );
+
+    return result.reverse(); // Reverse to make the most recent year first
   }
 }
