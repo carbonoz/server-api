@@ -1,6 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EFuelType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class RegisterUserAssetsDto {
   @IsString()
@@ -11,6 +19,7 @@ export class RegisterUserAssetsDto {
     default: 'BBox',
   })
   assetName: string;
+
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
@@ -19,10 +28,12 @@ export class RegisterUserAssetsDto {
     default: 'Carbonoz',
   })
   assetOwner: string;
+
   @IsNotEmpty()
   @IsEnum(EFuelType)
   @ApiProperty({ required: true, enum: EFuelType })
   fuelType: EFuelType;
+
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
@@ -31,36 +42,229 @@ export class RegisterUserAssetsDto {
     default: 'Rwanda',
   })
   country: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    default: -1.2921,
+  })
+  latitude: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    default: 36.8219,
+  })
+  longitude: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: Number,
+    required: true,
+    default: 24.0,
+  })
+  capacityKwp: number;
+
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
     type: String,
     required: true,
-    default: 'KG v6 201N',
+    default: 'Service',
   })
-  address: string;
-  @IsNumber()
+  service: string;
+
+  @IsDateString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: '2024-01-01T00:00:00Z',
+  })
+  codDate: Date;
+
+  @IsInt()
   @IsNotEmpty()
   @ApiProperty({
     type: Number,
     required: true,
-    default: -33333342323211,
+    default: 10,
   })
-  latitude: number;
-  @IsNumber()
+  amountOfInverters: number;
+
+  @IsInt()
   @IsNotEmpty()
   @ApiProperty({
     type: Number,
     required: true,
-    default: 33333342323211,
+    default: 20,
   })
-  longitude: number;
-  @IsNumber()
+  amountOfPanels: number;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'BrandX',
+  })
+  panelBrand: string;
+
+  @IsInt()
   @IsNotEmpty()
   @ApiProperty({
     type: Number,
     required: true,
-    default: 24,
+    default: 300,
   })
-  capacity: number;
+  panelPower: number;
+
+  @ApiPropertyOptional({
+    type: Number,
+    required: false,
+    default: null,
+  })
+  @IsOptional()
+  @IsInt()
+  amountOfBatteries?: number;
+
+  @ApiPropertyOptional({
+    type: String,
+    required: false,
+    default: null,
+  })
+  @IsOptional()
+  @IsString()
+  batteryBrand?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    required: false,
+    default: null,
+  })
+  @IsOptional()
+  @IsString()
+  batteryModel?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'ModelX',
+  })
+  inverterModel: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'MonitoringSystemX',
+  })
+  monitoringSystemName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'http://example.com',
+  })
+  monitoringSystemURL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'path/to/building/photo',
+  })
+  buildingPhotoUpload: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'path/to/inverter/setup/photo',
+  })
+  inverterSetupPhotoUpload: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'path/to/solar/panels/photo',
+  })
+  solarPanelsPhotoUpload: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'SolarTx',
+  })
+  inverterBrand: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'SerialNumber1',
+  })
+  BatterySerialNumber1: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'SerialNumber2',
+  })
+  BatterySerialNumber2: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'SerialNumber3',
+  })
+  BatterySerialNumber3: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'SerialNumber1',
+  })
+  InverterSerialnumber1: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'SerialNumber2',
+  })
+  InverterSerialnumber2: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'SerialNumber3',
+  })
+  InverterSerialnumber3: string;
 }

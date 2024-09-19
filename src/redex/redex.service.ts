@@ -8,7 +8,12 @@ import * as FormData from 'form-data';
 import { lastValueFrom } from 'rxjs';
 import { IAppConfig } from 'src/__shared__/interfaces';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { RedexAuthResponse, RedexFileUplaodResponse } from './interface';
+import {
+  RedexAuthResponse,
+  RedexFileUplaodResponse,
+  RedexRegDeviceResponse,
+  RedexRegisterDeviceDto,
+} from './interface';
 
 @Injectable()
 export class RedexService {
@@ -60,7 +65,7 @@ export class RedexService {
     }
   }
 
-  async uplaodFile(file: Express.Multer.File, user: User) {
+  async uplaodFile(file: Express.Multer.File, user: User): Promise<string> {
     const token = await this.generateRedexToken();
     const formData = new FormData();
     formData.append('File', file.buffer, {
@@ -83,14 +88,14 @@ export class RedexService {
           ),
         )
       ).data;
-      const redexInfo = await this.prismaService.redexInformation.create({
+      await this.prismaService.redexInformation.create({
         data: {
           userId: user.id,
           redexFileId: response.Data.Id,
           ValidationCode: response.Data.ValidationCode,
         },
       });
-      return redexInfo;
+      return response.Data.Id;
     } catch (error) {
       this.logger.error('Error uplaoding Redex file', error);
       if (error.response) {
@@ -157,5 +162,56 @@ export class RedexService {
       }
     }
     return results;
+  }
+
+  async registerGroupDevice(dto: RedexRegisterDeviceDto) {
+    const token = await this.generateRedexToken();
+
+    const body = {
+      ...dto,
+    };
+    try {
+      const registrationResponse = (
+        await lastValueFrom(
+          this.httpService.post<RedexRegDeviceResponse>(
+            `${
+              this.configService.get('redex').url
+            }/device-applications/i-rec/grouped`,
+            body,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          ),
+        )
+      ).data;
+      return registrationResponse;
+    } catch (error) {
+      this.logger.error('Error registering devices', error);
+      if (error.response) {
+        this.logger.error('Error response data:', error.response.data);
+        this.logger.error('Error response status:', error.response.status);
+        this.logger.error('Error response headers:', error.response.headers);
+      } else if (error.request) {
+        this.logger.error('No response received:', error.request);
+      } else {
+        this.logger.error('Axios error:', error.message);
+      }
+      throw new BadRequestException({
+        message: 'Failed to register Device',
+        error: error.message,
+      });
+    }
+  }
+
+  async getUserFileId(user: User) {
+    const userFile = await this.prismaService.redexInformation.findFirst({
+      where: {
+        userId: user.id,
+      },
+    });
+    return userFile.redexFileId;
   }
 }

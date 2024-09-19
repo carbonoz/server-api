@@ -31,8 +31,14 @@ import { AllowRoles, GetUser } from 'src/auth/decorators';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { BoxService } from 'src/box/box.service';
+import { CertificationService } from 'src/certification/certification.service';
+import { CertificationDto } from 'src/certification/dto';
 import { RegisterUserInfoDto } from 'src/information/dto';
 import { InformationService } from 'src/information/information.service';
+import { MeterDto } from 'src/meter/dto';
+import { MeterService } from 'src/meter/meter.service';
+import { ProjectDto } from 'src/project/dto';
+import { ProjectService } from 'src/project/project.service';
 import { RedexService } from 'src/redex/redex.service';
 
 @Controller('user')
@@ -49,6 +55,9 @@ export class UserController {
     private readonly additionalInfo: InformationService,
     private readonly redexService: RedexService,
     private readonly boxService: BoxService,
+    private readonly meterService: MeterService,
+    private readonly projectService: ProjectService,
+    private readonly certificationService: CertificationService,
   ) {}
 
   @ApiOkResponse({
@@ -71,7 +80,6 @@ export class UserController {
   @ApiBody({ type: RegisterUserAssetsDto })
   @ApiOperation({ summary: 'user create asset' })
   async createAsset(@Body() dto: RegisterUserAssetsDto, @GetUser() user: User) {
-    console.log({ dto });
     const result = await this.assetService.registerAssets(dto, user);
     return new GenericResponse('created-asset', result);
   }
@@ -88,11 +96,11 @@ export class UserController {
     return new GenericResponse('user-infos', result);
   }
 
+  @Post('info')
   @ApiCreatedResponse({
     description: 'user created additional infos',
     type: GenericResponse,
   })
-  @Post('info')
   @ApiBody({ type: RegisterUserInfoDto })
   @ApiOperation({ summary: 'user create additional info' })
   @ApiConflictResponse({
@@ -107,6 +115,87 @@ export class UserController {
       user,
     );
     return new GenericResponse('created-info', result);
+  }
+
+  @ApiCreatedResponse({
+    description: 'user created meter infos',
+    type: GenericResponse,
+  })
+  @ApiBody({ type: MeterDto })
+  @ApiOperation({ summary: 'user create meter info' })
+  @ApiConflictResponse({
+    description: 'meter  already exists for this user',
+  })
+  @Post('meter')
+  async addMeter(@Body() dto: MeterDto, @GetUser() user: User) {
+    const result = await this.meterService.addMeter(dto, user);
+    return new GenericResponse('meter-info', result);
+  }
+
+  @ApiOkResponse({
+    description: 'user meter infos retrieved successfully',
+    type: GenericResponse,
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'user meter information' })
+  @Get('meter')
+  async getMeter(@GetUser() user: User) {
+    const result = await this.meterService.getMeter(user);
+    return new GenericResponse('get-meter-infos', result);
+  }
+
+  @ApiCreatedResponse({
+    description: 'user created project infos',
+    type: GenericResponse,
+  })
+  @ApiBody({ type: ProjectDto })
+  @ApiOperation({ summary: 'user create project info' })
+  @ApiConflictResponse({
+    description: 'project  already exists for this user',
+  })
+  @Post('project')
+  async addProject(@Body() dto: ProjectDto, @GetUser() user: User) {
+    const result = await this.projectService.addProject(dto, user);
+    return new GenericResponse('project-info', result);
+  }
+
+  @ApiOkResponse({
+    description: 'user project infos retrieved successfully',
+    type: GenericResponse,
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'user project information' })
+  @Get('project')
+  async getProject(@GetUser() user: User) {
+    const result = await this.projectService.getProject(user);
+    return new GenericResponse('get-project-infos', result);
+  }
+
+  @ApiCreatedResponse({
+    description: 'user created certification infos',
+    type: GenericResponse,
+  })
+  @ApiBody({ type: ProjectDto })
+  @ApiOperation({ summary: 'user create certification info' })
+  @ApiConflictResponse({
+    description: 'certification  already exists for this user',
+  })
+  @Post('certification')
+  async addCertification(@Body() dto: CertificationDto, @GetUser() user: User) {
+    const result = await this.certificationService.addCertificates(dto, user);
+    return new GenericResponse('certification-info', result);
+  }
+
+  @ApiOkResponse({
+    description: 'user certification infos retrieved successfully',
+    type: GenericResponse,
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'user certification information' })
+  @Get('certification')
+  async getCertification(@GetUser() user: User) {
+    const result = await this.certificationService.getCertificates(user);
+    return new GenericResponse('get-certification-infos', result);
   }
 
   @ApiBody({
@@ -158,5 +247,17 @@ export class UserController {
   async getUserPorts(@GetUser() user: User) {
     const result = await this.boxService.getUserPorts(user);
     return new GenericResponse('user-ports', result);
+  }
+
+  @ApiOkResponse({
+    description: 'redex file  Id retrieved successfully',
+    type: GenericResponse,
+  })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'redex file  Id' })
+  @Get('redex')
+  async getRedexFile(@GetUser() user: User) {
+    const result = await this.redexService.getUserFileId(user);
+    return new GenericResponse('redex file Id', result);
   }
 }

@@ -1,5 +1,6 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import {
+  ApiBody,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -7,6 +8,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { GenericResponse } from 'src/__shared__/dto';
+import { RedexRegisterDeviceDto } from './interface';
 import { RedexService } from './redex.service';
 
 @Controller('redex')
@@ -29,5 +31,14 @@ export class RedexController {
   async getTotals() {
     const result = await this.redexService.getTotals();
     return new GenericResponse('totals', result);
+  }
+
+  @ApiCreatedResponse({ description: 'Device registered successfully' })
+  @ApiOperation({ summary: 'register Devices' })
+  @Post('device')
+  @ApiBody({ type: RedexRegisterDeviceDto })
+  async registerDevices(@Body() dto: RedexRegisterDeviceDto) {
+    const result = await this.redexService.registerGroupDevice(dto);
+    return new GenericResponse('Device registered', result);
   }
 }

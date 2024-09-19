@@ -15,6 +15,11 @@ import { InformationModule } from './information/information.module';
 import { UserModule } from './user/user.module';
 import { StepsModule } from './steps/steps.module';
 import { RedexModule } from './redex/redex.module';
+import { PartnersModule } from './partners/partners.module';
+import { SystemstepsModule } from './systemsteps/systemsteps.module';
+import { MeterModule } from './meter/meter.module';
+import { ProjectModule } from './project/project.module';
+import { CertificationModule } from './certification/certification.module';
 
 @Module({
   imports: [
@@ -34,6 +39,11 @@ import { RedexModule } from './redex/redex.module';
     UserModule,
     StepsModule,
     RedexModule,
+    PartnersModule,
+    SystemstepsModule,
+    MeterModule,
+    ProjectModule,
+    CertificationModule,
   ],
   controllers: [],
   providers: [
