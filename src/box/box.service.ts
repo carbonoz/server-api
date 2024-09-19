@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Box, User, UserPorts } from '@prisma/client';
+import { User, UserPorts } from '@prisma/client';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterBoxDto } from './dto';
@@ -17,13 +17,6 @@ export class BoxService {
   ): Promise<{
     data: { user: User; token: string };
   }> {
-    await this.prismaService.box.create({
-      data: {
-        userId: user.id,
-        serialNumber: dto.serialNumber,
-        photoProof: dto.photoProof,
-      },
-    });
     const userPort = await this.prismaService.userPorts.create({
       data: {
         userId: user.id,
@@ -36,13 +29,13 @@ export class BoxService {
     return this.authService.generateToken(user, userPort.port);
   }
 
-  async getBoxesRegistered(user: User): Promise<Array<Box>> {
-    const boxes = await this.prismaService.box.findMany({
+  async getBoxesRegistered(user: User): Promise<Array<UserPorts>> {
+    const userPorts = await this.prismaService.userPorts.findMany({
       where: {
         userId: user.id,
       },
     });
-    return boxes;
+    return userPorts;
   }
 
   async getUserPorts(user: User): Promise<Array<UserPorts>> {

@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { User, UserAdditionalInformation } from '@prisma/client';
+import { User, UserInformation } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterUserInfoDto } from './dto';
 
@@ -10,18 +10,17 @@ export class InformationService {
   async createAdditionalInformation(
     dto: RegisterUserInfoDto,
     user: User,
-  ): Promise<UserAdditionalInformation> {
-    const isInfoThere =
-      await this.prismaService.userAdditionalInformation.findFirst({
-        where: {
-          userId: user.id,
-        },
-      });
+  ): Promise<UserInformation> {
+    const isInfoThere = await this.prismaService.userInformation.findFirst({
+      where: {
+        userId: user.id,
+      },
+    });
 
     if (isInfoThere) {
       throw new ConflictException('Information  already exists for this user');
     } else {
-      return await this.prismaService.userAdditionalInformation.create({
+      return await this.prismaService.userInformation.create({
         data: {
           userId: user.id,
           ...dto,
@@ -30,10 +29,8 @@ export class InformationService {
     }
   }
 
-  async getAdditionalInformation(
-    user: User,
-  ): Promise<UserAdditionalInformation> {
-    return await this.prismaService.userAdditionalInformation.findFirst({
+  async getAdditionalInformation(user: User): Promise<UserInformation> {
+    return await this.prismaService.userInformation.findFirst({
       where: {
         userId: user.id,
       },

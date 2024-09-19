@@ -20,10 +20,22 @@ enum EFuelType {
 }
 
 enum ESteps {
-  USER_INFO
-  ASSET_INFO
   REDEX_FORM
   UPLOAD_FORM
+  LAST_STEP
+  REDEX_FIELDS
+}
+
+enum EPartner {
+  REDEX
+}
+
+enum ESystemSteps {
+  USER_INFORMATION
+  ASSET
+  METERING_EVIDENCE
+  CERTIFICATION
+  PROJECT
   LAST_STEP
 }
 
@@ -44,6 +56,13 @@ model User {
   UserSteps                 UserSteps[]
   RedexInformation          RedexInformation[]
   UserPorts                 UserPorts[]
+  Partners                  Partners[]
+  UserInformation           UserInformation[]
+  Asset                     Asset[]
+  MeteringEvidence          MeteringEvidence[]
+  Certification             Certification[]
+  Project                   Project[]
+  SystemSteps               SystemSteps[]
 }
 
 model Topic {
@@ -112,7 +131,7 @@ model UserSteps {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id])
-  step      ESteps   @default(USER_INFO)
+  step      ESteps   @default(REDEX_FORM)
   isFile    Boolean? @default(false)
   status    Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -137,4 +156,107 @@ model UserPorts {
   mqttUsername String?
   mqttPassword String?
   mqttPort     Int?
+}
+
+model Partners {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  userId    String   @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id])
+  partner   String[]
+  status    Boolean  @default(false)
+  choice    Boolean  @default(false)
+}
+
+model SystemSteps {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now())
+  step      ESystemSteps @default(USER_INFORMATION)
+  status    Boolean      @default(false)
+  userId    String       @db.ObjectId
+  user      User?        @relation(fields: [userId], references: [id])
+}
+
+model UserInformation {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now())
+  userId           String   @db.ObjectId
+  user             User?    @relation(fields: [userId], references: [id])
+  firstName        String?
+  lastName         String?
+  street           String?
+  city             String?
+  telephone        String?
+  customerLanguage String?
+  customerTimezone String?
+}
+
+model Asset {
+  id                       String   @id @default(auto()) @map("_id") @db.ObjectId
+  assetName                String
+  assetOwner               String
+  fuelType                 String
+  country                  String
+  latitude                 Float
+  longitude                Float
+  capacityKwp              Float
+  service                  String
+  codDate                  DateTime
+  amountOfInverters        Int
+  amountOfPanels           Int
+  panelBrand               String
+  panelPower               Int
+  amountOfBatteries        Int?
+  batteryBrand             String?
+  batteryModel             String?
+  inverterModel            String
+  monitoringSystemName     String
+  monitoringSystemURL      String
+  buildingPhotoUpload      String
+  inverterSetupPhotoUpload String
+  solarPanelsPhotoUpload   String
+  inverterBrand            String?
+  BatterySerialNumber1     String?
+  BatterySerialNumber2     String?
+  BatterySerialNumber3     String?
+  InverterSerielnumber1    String?
+  InverterSerialnumber1    String?
+  InverterSerialnumber2    String?
+  InverterSerialnumber3    String?
+  userId                   String   @db.ObjectId
+  user                     User     @relation(fields: [userId], references: [id])
+}
+
+model MeteringEvidence {
+  id                          String  @id @default(auto()) @map("_id") @db.ObjectId
+  meterId                     String?
+  meterBrand                  String?
+  meterType                   String?
+  meteringEvidencePhotoUpload String
+  userId                      String  @db.ObjectId
+  user                        User    @relation(fields: [userId], references: [id])
+}
+
+model Certification {
+  id                                     String  @id @default(auto()) @map("_id") @db.ObjectId
+  powerPurchaseAgreement                 String?
+  interconnectionAgreement               String?
+  commissioningCertificationToGrid       String?
+  commissioningCertificationOrInspection String?
+  powerQualityTest                       String?
+  IDPhotoUploadorCompanyCertificate      String?
+  userId                                 String  @db.ObjectId
+  user                                   User    @relation(fields: [userId], references: [id])
+}
+
+model Project {
+  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
+  projectBackground  String?
+  projectDescription String?
+  projectImpact      String?
+  userId             String  @db.ObjectId
+  user               User    @relation(fields: [userId], references: [id])
 }

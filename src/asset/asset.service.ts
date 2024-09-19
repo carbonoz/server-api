@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User, UserAssetInformation } from '@prisma/client';
+import { Asset, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterUserAssetsDto } from './dto';
 
@@ -7,20 +7,19 @@ import { RegisterUserAssetsDto } from './dto';
 export class AssetService {
   constructor(private prismaService: PrismaService) {}
 
-  async registerAssets(
-    dto: RegisterUserAssetsDto,
-    user: User,
-  ): Promise<UserAssetInformation> {
-    return await this.prismaService.userAssetInformation.create({
+  async registerAssets(dto: RegisterUserAssetsDto, user: User): Promise<Asset> {
+    const newDto = dto;
+    newDto.codDate = new Date(newDto.codDate);
+    return await this.prismaService.asset.create({
       data: {
         userId: user.id,
-        ...dto,
+        ...newDto,
       },
     });
   }
 
-  async getAllAssets(user: User): Promise<Array<UserAssetInformation>> {
-    return await this.prismaService.userAssetInformation.findMany({
+  async getAllAssets(user: User): Promise<Asset> {
+    return await this.prismaService.asset.findFirst({
       where: {
         userId: user.id,
       },

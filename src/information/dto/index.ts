@@ -1,33 +1,32 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString } from 'class-validator';
 
 export class RegisterUserInfoDto {
-  @ApiPropertyOptional({ type: String, default: 'Engineer' })
-  @IsOptional()
+  @ApiProperty({ type: String, default: 'John' })
   @IsString()
-  jobTitle: string;
-  @ApiPropertyOptional({ type: String, default: 'Akashi chris' })
-  @IsOptional()
+  firstName: string;
+
+  @ApiProperty({ type: String, default: 'Doe' })
   @IsString()
-  names: string;
-  @ApiPropertyOptional({ type: String, default: 'KG 67' })
-  @IsOptional()
+  lastName: string;
+
+  @ApiProperty({ type: String, default: '123 Main St' })
   @IsString()
-  address: string;
-  @ApiPropertyOptional({ type: String, default: '00000' })
-  @IsOptional()
-  @IsString()
-  postalCode: string;
-  @ApiPropertyOptional({ type: String, default: 'KIgali' })
-  @IsOptional()
+  street: string;
+
+  @ApiProperty({ type: String, default: 'Kigali' })
   @IsString()
   city: string;
-  @ApiPropertyOptional({ type: String, default: 'Rwanda' })
-  @IsOptional()
+
+  @ApiProperty({ type: String, default: '+250781273704' })
   @IsString()
-  country: string;
-  @ApiPropertyOptional({ type: String, default: '+250781273704' })
-  @IsOptional()
+  telephone: string;
+
+  @ApiProperty({ type: String, default: 'English' })
   @IsString()
-  phone: string;
+  customerLanguage: string;
+
+  @ApiProperty({ type: String, default: 'Africa/Kigali' })
+  @IsString()
+  customerTimezone: string;
 }
