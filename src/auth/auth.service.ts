@@ -70,7 +70,7 @@ export class AuthService {
 
     const imageBase64 = await this.convertImageToBase64(url);
 
-    console.log({ verificationUrl });
+    console.log({ url: this.config.get('frontedUrl') });
 
     const result = await this.mail.sendMail(
       `${user.email}`,
