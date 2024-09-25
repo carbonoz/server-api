@@ -70,6 +70,8 @@ export class AuthService {
 
     const imageBase64 = await this.convertImageToBase64(url);
 
+    console.log({ verificationUrl });
+
     const result = await this.mail.sendMail(
       `${user.email}`,
       `Confirm email`,
