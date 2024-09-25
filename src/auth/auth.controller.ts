@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -11,7 +12,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { CreateUserDto, LoginUserDto } from './dto';
+import { CreateUserDto, LoginUserDto, VerifyUserDto } from './dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -37,6 +38,18 @@ export class AuthController {
   @Post('login')
   async userLogin(@Body() dto: LoginUserDto) {
     const result = await this.authService.loginUser(dto);
+    return result;
+  }
+
+  @ApiOkResponse({ description: 'Verify User' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired token' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiOperation({ summary: 'User verification' })
+  @ApiBody({ type: VerifyUserDto })
+  @HttpCode(200)
+  @Post('verify-user')
+  async verifyUser(@Body() dto: VerifyUserDto) {
+    const result = await this.authService.verifyUser(dto);
     return result;
   }
 }

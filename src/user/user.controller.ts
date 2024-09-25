@@ -40,6 +40,7 @@ import { MeterService } from 'src/meter/meter.service';
 import { ProjectDto } from 'src/project/dto';
 import { ProjectService } from 'src/project/project.service';
 import { RedexService } from 'src/redex/redex.service';
+import { UserService } from './user.service';
 
 @Controller('user')
 @ApiTags('user')
@@ -58,6 +59,7 @@ export class UserController {
     private readonly meterService: MeterService,
     private readonly projectService: ProjectService,
     private readonly certificationService: CertificationService,
+    private readonly userService: UserService,
   ) {}
 
   @ApiOkResponse({
@@ -260,4 +262,11 @@ export class UserController {
     const result = await this.redexService.getUserFileId(user);
     return new GenericResponse('redex file Id', result);
   }
+
+  // @Post('email')
+  // @ApiCreatedResponse({ description: 'Email sent' })
+  // async sendMail() {
+  //   const result = await this.userService.sendMail();
+  //   return new GenericResponse('email sent', result);
+  // }
 }

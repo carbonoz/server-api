@@ -14,9 +14,7 @@ export class BoxService {
   async registerBox(
     dto: RegisterBoxDto,
     user: User,
-  ): Promise<{
-    data: { user: User; token: string };
-  }> {
+  ): Promise<{ data: { user: User; token: string } } | string> {
     const userPort = await this.prismaService.userPorts.create({
       data: {
         userId: user.id,
