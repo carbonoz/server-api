@@ -40,12 +40,11 @@ enum ESystemSteps {
 }
 
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  active    Boolean  @default(true)
-  role      ERole    @default(USER)
-
+  id                        String                      @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @default(now())
+  active                    Boolean                     @default(false)
+  role                      ERole                       @default(USER)
   email                     String?                     @unique
   password                  String?
   Topic                     Topic[]

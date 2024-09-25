@@ -20,6 +20,9 @@ import { SystemstepsModule } from './systemsteps/systemsteps.module';
 import { MeterModule } from './meter/meter.module';
 import { ProjectModule } from './project/project.module';
 import { CertificationModule } from './certification/certification.module';
+import { MailsModule } from './mails/mails.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -44,6 +47,10 @@ import { CertificationModule } from './certification/certification.module';
     MeterModule,
     ProjectModule,
     CertificationModule,
+    MailsModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'assets'),
+    }),
   ],
   controllers: [],
   providers: [

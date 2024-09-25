@@ -33,3 +33,8 @@ export class LoginUserDto {
   @ApiProperty({ type: String, required: true })
   password: string;
 }
+
+export class VerifyUserDto {
+  @IsString()
+  token: string;
+}

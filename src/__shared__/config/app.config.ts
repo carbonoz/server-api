@@ -20,6 +20,7 @@ export function appConfig(): IAppConfig {
       clientId: process.env.REDEX_CLIENT_ID,
       clientSecret: process.env.REDEX_CLIENT_SECRET,
     },
+    frontedUrl: process.env.FRONTED_URL,
   };
 }
 

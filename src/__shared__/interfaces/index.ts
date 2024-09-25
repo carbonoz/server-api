@@ -5,6 +5,7 @@ export interface IAppConfig {
   jwt?: JwtConfig;
   swaggerEnabled?: boolean;
   redex?: IRedexConfig;
+  frontedUrl: string;
 }
 
 interface JwtConfig {
