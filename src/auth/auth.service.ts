@@ -105,7 +105,13 @@ export class AuthService {
       },
     });
     const token = this.generateToken(user, null, true);
-    return await this.sendEmail(user, token);
+    const message = this.sendEmail(user, token);
+    return {
+      data: {
+        message,
+        user,
+      },
+    };
   }
 
   async loginUser(dto: LoginUserDto) {
