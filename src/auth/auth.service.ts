@@ -14,7 +14,12 @@ import { IAppConfig } from 'src/__shared__/interfaces';
 import { EventService } from 'src/event/event.service';
 import { MailsService } from 'src/mails/mails.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserDto, LoginUserDto, VerifyUserDto } from './dto';
+import {
+  CreateUserDto,
+  forgotPasswordDto,
+  LoginUserDto,
+  VerifyUserDto,
+} from './dto';
 import { JwtPayload } from './interfaces';
 
 @Injectable()
@@ -61,6 +66,7 @@ export class AuthService {
   public async sendEmail(
     user: User,
     token: { data: { user: User; token: string } } | string,
+    isForgotPassword?: boolean,
   ) {
     const verificationUrl = `${this.config.get(
       'frontedUrl',
@@ -70,15 +76,21 @@ export class AuthService {
 
     const imageBase64 = await this.convertImageToBase64(url);
 
+    const resetPasswordUrl = `${this.config.get(
+      'frontedUrl',
+    )}/resetPassword?token=${token}`;
+
     const result = await this.mail.sendMail(
       `${user.email}`,
-      `Confirm email`,
+      isForgotPassword ? 'Reset password' : 'Confirm email',
       '"No Reply" <solar-autopilot@carbonoz.com>',
       {
         username: user.email,
-        verificationUrl,
+        verificationUrl: isForgotPassword ? resetPasswordUrl : verificationUrl,
       },
-      './conformation.template.hbs',
+      isForgotPassword
+        ? './forgotPassword.template.hbs'
+        : './conformation.template.hbs',
       [
         {
           filename: 'image.png',
@@ -161,6 +173,41 @@ export class AuthService {
         data: { active: true },
       });
       return this.generateToken(newUser);
+    } catch (error) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+  }
+
+  async EmailForgotPassword(dto: forgotPasswordDto) {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email: dto.email,
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+    const token = this.generateToken(user, null, true);
+    const message = this.sendEmail(user, token, true);
+    return {
+      data: {
+        message,
+        user,
+      },
+    };
+  }
+
+  async verifyUserOnReset(dto: VerifyUserDto) {
+    try {
+      const payload: JwtPayload = this.Jwt.verify(dto.token, {
+        secret: this.config.get('jwt').secret,
+      });
+      const user = await this.prismaService.user.findUnique({
+        where: { email: payload.email },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      return this.generateToken(user);
     } catch (error) {
       throw new BadRequestException('Invalid or expired token');
     }

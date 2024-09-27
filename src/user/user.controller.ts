@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   ParseFilePipeBuilder,
+  Patch,
   Post,
   UploadedFile,
   UseGuards,
@@ -40,6 +41,7 @@ import { MeterService } from 'src/meter/meter.service';
 import { ProjectDto } from 'src/project/dto';
 import { ProjectService } from 'src/project/project.service';
 import { RedexService } from 'src/redex/redex.service';
+import { resetPasswordDto } from './dto';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -263,10 +265,15 @@ export class UserController {
     return new GenericResponse('redex file Id', result);
   }
 
-  // @Post('email')
-  // @ApiCreatedResponse({ description: 'Email sent' })
-  // async sendMail() {
-  //   const result = await this.userService.sendMail();
-  //   return new GenericResponse('email sent', result);
-  // }
+  @Patch('reset-password')
+  @ApiCreatedResponse({
+    description: 'user created certification infos',
+  })
+  @ApiBody({ type: resetPasswordDto })
+  @ApiCreatedResponse({ description: 'Password reseted' })
+  @ApiOperation({ summary: 'Reset user password' })
+  async resetPassword(@Body() dto: resetPasswordDto, @GetUser() user: User) {
+    const result = await this.userService.resetPassword(dto, user);
+    return new GenericResponse('Password reseted', result);
+  }
 }
