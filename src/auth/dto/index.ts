@@ -35,6 +35,22 @@ export class LoginUserDto {
 }
 
 export class VerifyUserDto {
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'eTYtffyvytvpppn',
+  })
   @IsString()
   token: string;
+}
+
+export class forgotPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    type: String,
+    required: true,
+    default: 'christiannseko@gmail.com',
+  })
+  email: string;
 }

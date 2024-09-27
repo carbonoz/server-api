@@ -12,7 +12,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { CreateUserDto, LoginUserDto, VerifyUserDto } from './dto';
+import {
+  CreateUserDto,
+  forgotPasswordDto,
+  LoginUserDto,
+  VerifyUserDto,
+} from './dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -50,6 +55,29 @@ export class AuthController {
   @Post('verify-user')
   async verifyUser(@Body() dto: VerifyUserDto) {
     const result = await this.authService.verifyUser(dto);
+    return result;
+  }
+
+  @ApiOkResponse({ description: 'Email sent for  User' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiOperation({ summary: 'User forgot password' })
+  @ApiBody({ type: forgotPasswordDto })
+  @HttpCode(200)
+  @Post('forgot-password')
+  async verifyUserForResetingPassword(@Body() dto: forgotPasswordDto) {
+    const result = await this.authService.EmailForgotPassword(dto);
+    return result;
+  }
+
+  @ApiOkResponse({ description: 'Verify User ' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired token' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiOperation({ summary: 'User verification while reseting password' })
+  @ApiBody({ type: VerifyUserDto })
+  @HttpCode(200)
+  @Post('verify-user-email')
+  async verifyUserOnReset(@Body() dto: VerifyUserDto) {
+    const result = await this.authService.verifyUserOnReset(dto);
     return result;
   }
 }
