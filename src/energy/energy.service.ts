@@ -16,6 +16,7 @@ import {
 import { formatInTimeZone } from 'date-fns-tz';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
+import { FilterTimeEnergyDTO } from './dto';
 
 @Injectable()
 export class EnergyService {
@@ -126,17 +127,22 @@ export class EnergyService {
   private async getTotalsForDateRange(
     user: User,
     days: number,
-    isYearly = false,
+    dto?: FilterTimeEnergyDTO,
   ): Promise<Array<TotalEnergy>> {
     const userPorts = await this.prismaService.userPorts.findFirst({
       where: { userId: user.id },
     });
 
-    const today = new Date();
-    const startDate = isYearly
-      ? subDays(today, days * 365)
-      : subDays(today, days - 1);
     const timezone = 'Indian/Mauritius';
+
+    const today = new Date();
+    const startDate = dto?.from
+      ? parseISO(formatInTimeZone(new Date(dto.from), timezone, 'yyyy-MM-dd'))
+      : subDays(today, days - 1);
+
+    const endDate = dto?.to
+      ? parseISO(formatInTimeZone(new Date(dto.to), timezone, 'yyyy-MM-dd'))
+      : today;
 
     const totals = await this.prismaService.totalEnergy.findMany({
       where: {
@@ -145,12 +151,12 @@ export class EnergyService {
           {
             date: {
               gte: formatInTimeZone(
-                startOfDay(startDate),
+                startOfDay(new Date(startDate)),
                 timezone,
                 "yyyy-MM-dd'T'HH:mm:ssXXX",
               ),
               lte: formatInTimeZone(
-                endOfDay(today),
+                endOfDay(new Date(endDate)),
                 timezone,
                 "yyyy-MM-dd'T'HH:mm:ssXXX",
               ),
@@ -175,9 +181,7 @@ export class EnergyService {
             formattedDate && !this.isZeroTotal(t),
       );
 
-      const previousDate = isYearly
-        ? subDays(currentDate, 365)
-        : subDays(currentDate, 1);
+      const previousDate = subDays(currentDate, 1);
       const yesterdayTotals = totals.find(
         (t) =>
           formatInTimeZone(parseISO(t.date), timezone, 'yyyy-MM-dd') ===
@@ -217,12 +221,18 @@ export class EnergyService {
     return this.adjustTotals(result.reverse());
   }
 
-  async getTotalsEnergy(user: User): Promise<Array<TotalEnergy>> {
-    return this.getTotalsForDateRange(user, 7);
+  async getTotalsEnergy(
+    user: User,
+    dto: FilterTimeEnergyDTO,
+  ): Promise<Array<TotalEnergy>> {
+    return this.getTotalsForDateRange(user, 7, dto);
   }
 
-  async getTotalsEnergyLast30Days(user: User): Promise<Array<TotalEnergy>> {
-    return this.getTotalsForDateRange(user, 30);
+  async getTotalsEnergyLast30Days(
+    user: User,
+    dto: FilterTimeEnergyDTO,
+  ): Promise<Array<TotalEnergy>> {
+    return this.getTotalsForDateRange(user, 30, dto);
   }
 
   async getTotalsEnergyLast12Months(user: User): Promise<Array<TotalEnergy>> {
