@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiInternalServerErrorResponse,
@@ -12,6 +12,7 @@ import { GenericResponse } from 'src/__shared__/dto';
 import { AllowRoles, GetUser } from 'src/auth/decorators';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { FilterTimeEnergyDTO } from './dto';
 import { EnergyService } from './energy.service';
 
 @Controller('energy')
@@ -28,8 +29,8 @@ export class EnergyController {
   @HttpCode(200)
   @ApiOperation({ summary: 'user retrieve energy data for boxes' })
   @Get('energy-data')
-  async topics(@GetUser() user: User) {
-    const result = await this.energyService.getTotalsEnergy(user);
+  async topics(@GetUser() user: User, @Query() dto: FilterTimeEnergyDTO) {
+    const result = await this.energyService.getTotalsEnergy(user, dto);
     return new GenericResponse('energy-data', result);
   }
 
@@ -39,8 +40,14 @@ export class EnergyController {
   @HttpCode(200)
   @ApiOperation({ summary: 'energy data for last 30 days ' })
   @Get('total/30')
-  async topicsForlast30Days(@GetUser() user: User) {
-    const result = await this.energyService.getTotalsEnergyLast30Days(user);
+  async topicsForlast30Days(
+    @GetUser() user: User,
+    @Query() dto: FilterTimeEnergyDTO,
+  ) {
+    const result = await this.energyService.getTotalsEnergyLast30Days(
+      user,
+      dto,
+    );
     return new GenericResponse('energy-data for 30 days', result);
   }
   @ApiOkResponse({
