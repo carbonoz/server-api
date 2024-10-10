@@ -266,14 +266,28 @@ export class UserController {
   }
 
   @Patch('reset-password')
-  @ApiCreatedResponse({
-    description: 'user created certification infos',
-  })
   @ApiBody({ type: resetPasswordDto })
   @ApiCreatedResponse({ description: 'Password reseted' })
   @ApiOperation({ summary: 'Reset user password' })
   async resetPassword(@Body() dto: resetPasswordDto, @GetUser() user: User) {
     const result = await this.userService.resetPassword(dto, user);
     return new GenericResponse('Password reseted', result);
+  }
+
+  // @ApiCreatedResponse({
+  //   description: 'Email sent successfully',
+  // })
+  // @Post('email')
+  // async sendTEmail() {
+  //   const result = await this.userService.sendTestEmail();
+  //   return new GenericResponse('Email sent', result);
+  // }
+
+  @ApiOkResponse({ description: ' credentials retreived' })
+  @ApiOperation({ summary: 'User get  credentials' })
+  @Get('credentials')
+  async GenerateCredentials(@GetUser() user: User) {
+    const result = await this.userService.generateCredentials(user);
+    return new GenericResponse('credentials retreived', result);
   }
 }
