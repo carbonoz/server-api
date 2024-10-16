@@ -42,6 +42,7 @@ import { ProjectDto } from 'src/project/dto';
 import { ProjectService } from 'src/project/project.service';
 import { RedexService } from 'src/redex/redex.service';
 import { resetPasswordDto } from './dto';
+import { EditUserInfoDto } from './dto/editUserInfo.dto';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -282,6 +283,16 @@ export class UserController {
   //   const result = await this.userService.sendTestEmail();
   //   return new GenericResponse('Email sent', result);
   // }
+
+  @Patch('edit-user')
+  @ApiBody({ type: EditUserInfoDto })
+  @ApiOkResponse({ description: 'User info edited succesfully' })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Edit user info' })
+  async editUserInfo(@Body() dto: EditUserInfoDto, @GetUser() user: User) {
+    const result = await this.userService.editUserInformation(dto, user);
+    return new GenericResponse('info edited succesfully', result);
+  }
 
   @ApiOkResponse({ description: ' credentials retreived' })
   @ApiOperation({ summary: 'User get  credentials' })
