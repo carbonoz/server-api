@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { MailsService } from 'src/mails/mails.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { resetPasswordDto } from './dto';
+import { EditUserInfoDto } from './dto/editUserInfo.dto';
 
 @Injectable()
 export class UserService {
@@ -60,5 +61,22 @@ export class UserService {
     }
 
     return credentials;
+  }
+
+  async editUserInformation(dto: EditUserInfoDto, user: User) {
+    const infoToUpdate = await this.prismaService.userInformation.findFirst({
+      where: {
+        userId: user.id,
+      },
+    });
+    const userUpdate = await this.prismaService.userInformation.update({
+      where: {
+        id: infoToUpdate.id,
+      },
+      data: {
+        ...dto,
+      },
+    });
+    return userUpdate;
   }
 }
