@@ -13,6 +13,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
+  authenticateDTO,
   CreateUserDto,
   forgotPasswordDto,
   LoginUserDto,
@@ -78,6 +79,16 @@ export class AuthController {
   @Post('verify-user-email')
   async verifyUserOnReset(@Body() dto: VerifyUserDto) {
     const result = await this.authService.verifyUserOnReset(dto);
+    return result;
+  }
+
+  @ApiOkResponse({ description: 'User authenticated  successfully' })
+  @ApiOperation({ summary: 'authenticate login' })
+  @ApiBody({ type: authenticateDTO })
+  @HttpCode(200)
+  @Post('authenticate')
+  async AuthenticateUser(@Body() dto: authenticateDTO) {
+    const result = await this.authService.authenticateUser(dto);
     return result;
   }
 }

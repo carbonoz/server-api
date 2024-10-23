@@ -31,8 +31,8 @@ export class UserService {
   async sendTestEmail() {
     const result = await this.mailsService.sendMail(
       `christiannseko@gmail.com`,
-      'Potential issue',
-      '"Rajesh N" <solar-autopilot@carbonoz.com>',
+      'Congratulations on your admission - March intake',
+      '"John Austin" <solar-autopilot@carbonoz.com>',
       {
         username: '',
       },
