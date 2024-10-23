@@ -15,6 +15,7 @@ import { EventService } from 'src/event/event.service';
 import { MailsService } from 'src/mails/mails.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
+  authenticateDTO,
   CreateUserDto,
   forgotPasswordDto,
   LoginUserDto,
@@ -211,5 +212,17 @@ export class AuthService {
     } catch (error) {
       throw new BadRequestException('Invalid or expired token');
     }
+  }
+
+  async authenticateUser(dto: authenticateDTO) {
+    const userCredentials = await this.prismaService.userCredentials.findFirst({
+      where: {
+        AND: [{ clientId: dto.clientId }, { clientSecret: dto.clientSecret }],
+      },
+    });
+    if (!userCredentials) {
+      return null;
+    }
+    return { userId: userCredentials.userId };
   }
 }
