@@ -187,6 +187,28 @@ export class RedexService {
           ),
         )
       ).data;
+      const redexFileId = dto.Devices.map(
+        (device) => device.DeclarationFormFileId,
+      );
+      const row = await this.prismaService.redexInformation.findFirst({
+        where: {
+          redexFileId: String(redexFileId),
+        },
+      });
+      const Devices = dto.Devices.map((device) => device.Inverters);
+      const invArrayFlat = Devices.flatMap((item) => item);
+      const inArray: Array<string> = [];
+      invArrayFlat.forEach((item) => {
+        inArray.push(item.RemoteInvId);
+      });
+      await this.prismaService.redexInformation.update({
+        where: {
+          id: row.id,
+        },
+        data: {
+          remoteInvIds: inArray,
+        },
+      });
       return registrationResponse;
     } catch (error) {
       this.logger.error('Error registering devices', error);
@@ -213,5 +235,9 @@ export class RedexService {
       },
     });
     return userFile.redexFileId;
+  }
+
+  async generateMontlyForRedex() {
+    const remoteInvIds = await this.prismaService.redexInformation.findMany();
   }
 }
