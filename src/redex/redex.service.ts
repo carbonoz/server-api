@@ -1,16 +1,19 @@
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { User } from '@prisma/client';
-import { addDays, startOfDay } from 'date-fns';
+import { TotalEnergy, User } from '@prisma/client';
+import { addDays, format, parseISO, startOfDay } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import * as FormData from 'form-data';
 import { lastValueFrom } from 'rxjs';
 import { IAppConfig } from 'src/__shared__/interfaces';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
+  Redex400ErrorResponse,
+  Redex422ErrorResponse,
   RedexAuthResponse,
   RedexFileUplaodResponse,
+  RedexgenerateMonthlydataResponse,
   RedexRegDeviceResponse,
   RedexRegisterDeviceDto,
 } from './interface';
@@ -23,6 +26,48 @@ export class RedexService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService<IAppConfig>,
   ) {}
+
+  private async adjustTotals(result: TotalEnergy[]) {
+    result.sort(
+      (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime(),
+    );
+
+    const lastValuesMap = new Map<string, TotalEnergy>();
+
+    for (const entry of result) {
+      lastValuesMap.set(entry.date, entry);
+    }
+
+    const updatedResult: { date: string; pvPower: string }[] = [];
+    const dates = Array.from(lastValuesMap.keys());
+
+    for (let i = 0; i < dates.length; i++) {
+      const todayDate = dates[i];
+      const todayData = lastValuesMap.get(todayDate);
+      const yesterdayData = lastValuesMap.get(dates[i - 1]);
+
+      if (yesterdayData) {
+        const pvPowerDifference = (
+          parseFloat(todayData.pvPower) - parseFloat(yesterdayData.pvPower)
+        ).toFixed(2);
+
+        updatedResult.push({
+          date: todayDate,
+          pvPower:
+            parseFloat(pvPowerDifference) > 0
+              ? pvPowerDifference
+              : todayData.pvPower,
+        });
+      } else {
+        updatedResult.push({
+          date: todayDate,
+          pvPower: todayData.pvPower,
+        });
+      }
+    }
+
+    return updatedResult;
+  }
 
   async generateRedexToken() {
     const body = {
@@ -237,7 +282,137 @@ export class RedexService {
     return userFile.redexFileId;
   }
 
-  async generateMontlyForRedex() {
-    const remoteInvIds = await this.prismaService.redexInformation.findMany();
+  async getMonthlyData() {
+    const remoteInvIds = await this.prismaService.redexInformation.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    const responses = [];
+
+    const allMonths = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    for (const remoteInv of remoteInvIds) {
+      const userId = remoteInv.user.id;
+      const remoteInvIdsArray = remoteInv.remoteInvIds;
+
+      const results = await this.prismaService.totalEnergy.findMany({
+        where: { userId },
+      });
+
+      const adjustedResults = await this.adjustTotals(results);
+
+      const monthlyProduction: { [month: string]: number } = {};
+      const year = new Date().getFullYear();
+      for (const month of allMonths) {
+        monthlyProduction[month] = 0;
+      }
+
+      for (const entry of adjustedResults) {
+        const month = format(parseISO(entry.date), 'MMM');
+        const pvPower = parseFloat(entry.pvPower || '0');
+
+        if (!monthlyProduction[month]) {
+          monthlyProduction[month] = 0;
+        }
+        monthlyProduction[month] += pvPower;
+      }
+
+      for (const month in monthlyProduction) {
+        monthlyProduction[month] = parseFloat(
+          monthlyProduction[month].toFixed(3),
+        );
+      }
+
+      for (const remoteInvId of remoteInvIdsArray) {
+        responses.push({
+          RemoteInvId: remoteInvId,
+          Data: {
+            Year: year,
+            PeriodProductionPerMonthInKWh: { ...monthlyProduction },
+          },
+        });
+      }
+    }
+
+    if (responses.length === 0) {
+      responses.push({
+        RemoteInvId: '',
+        Data: {
+          Year: new Date().getFullYear(),
+          PeriodProductionPerMonthInKWh: {},
+        },
+      });
+    }
+
+    const token = await this.generateRedexToken();
+
+    const body = responses;
+
+    try {
+      const sendingResponse = (
+        await lastValueFrom(
+          this.httpService.post<RedexgenerateMonthlydataResponse>(
+            `${
+              this.configService.get('redex').url
+            }/generation-datas/monthly-data`,
+            body,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          ),
+        )
+      ).data;
+
+      if (sendingResponse.StatusCode === 201) {
+        console.log('sent');
+      }
+    } catch (error) {
+      this.logger.error('Error sendind monthly  devices Data', error);
+
+      if (error.response) {
+        const statusCode = error.response.status;
+
+        if (statusCode === 422) {
+          const errorData: Redex422ErrorResponse = error.response.data;
+          this.logger.error('422 Error response data:', errorData.Errors);
+        } else if (statusCode === 400) {
+          const errorData: Redex400ErrorResponse = error.response.data;
+          this.logger.error('400 Error response data:', errorData.Message);
+        } else {
+          this.logger.error('Error response data:', error.response.data);
+        }
+
+        this.logger.error('Error response status:', statusCode);
+        this.logger.error('Error response headers:', error.response.headers);
+      } else if (error.request) {
+        this.logger.error('No response received:', error.request);
+      } else {
+        this.logger.error('Axios error:', error.message);
+      }
+    }
+
+    return;
   }
 }
