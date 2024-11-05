@@ -49,6 +49,38 @@ export interface RedexRegDeviceResponse {
   Message: string;
 }
 
+export interface RedexgenerateMonthlydataResponse {
+  StatusCode: number;
+  Errors: null;
+  Meta: null;
+  Data: {
+    ProcessId: number;
+  };
+  Message: string;
+}
+
+export interface Redex422ErrorResponse {
+  StatusCode: number;
+  Errors: [
+    {
+      Key: string;
+      Message: string;
+      Messages: Array<string>;
+    },
+  ];
+  Meta: null;
+  Data: null;
+  Message: string;
+}
+
+export interface Redex400ErrorResponse {
+  StatusCode: number;
+  Errors: null;
+  Meta: null;
+  Data: null;
+  Message: string;
+}
+
 class InverterDto {
   @IsNotEmpty()
   @IsString()

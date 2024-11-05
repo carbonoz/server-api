@@ -41,4 +41,12 @@ export class RedexController {
     const result = await this.redexService.registerGroupDevice(dto);
     return new GenericResponse('Device registered', result);
   }
+
+  // @ApiOkResponse({ description: 'reports' })
+  // @ApiOperation({ summary: 'monthly report' })
+  // @Get('report')
+  // async getMonthlyReport() {
+  //   const result = await this.redexService.getMonthlyData();
+  //   return new GenericResponse('Device report', result);
+  // }
 }
