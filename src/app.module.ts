@@ -7,7 +7,6 @@ import { AssetModule } from './asset/asset.module';
 import { AuthModule } from './auth/auth.module';
 import { BoxModule } from './box/box.module';
 import { CertificationModule } from './certification/certification.module';
-import { ChatModule } from './chat/chat.module';
 import { EnergyModule } from './energy/energy.module';
 import { EventModule } from './event/event.module';
 import { InformationModule } from './information/information.module';
@@ -31,7 +30,6 @@ import { ScheduleModule } from './schedule/schedule.module';
     }),
     PrismaModule,
     AuthModule,
-    ChatModule,
     TopicModule,
     EventModule,
     EnergyModule,
