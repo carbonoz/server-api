@@ -1,8 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ChatGateway } from 'src/chat/chat.gateway';
 import { IAppConfig } from '../interfaces';
 
 export function appConfig(): IAppConfig {
@@ -49,16 +47,10 @@ export function configureSwagger(app: INestApplication): void {
   });
 }
 
-export function chatSetup(app: INestApplication): void {
-  app.get(ChatGateway);
-  app.useWebSocketAdapter(new IoAdapter(app));
-}
-
 export function configure(app: INestApplication): void {
   app.setGlobalPrefix('api/v1');
   app.enableCors();
   // corsConfig()
-  chatSetup(app);
   configureSwagger(app);
   const configService = app.get(ConfigService<IAppConfig>);
   if (configService.get('swaggerEnabled')) {
