@@ -225,4 +225,9 @@ export class AuthService {
     }
     return { userId: userCredentials.userId };
   }
+
+  async getUserServers() {
+    const hosts = await this.prismaService.userPorts.findMany();
+    return hosts.map((host) => host.port.replace(/\s+/g, ''));
+  }
 }

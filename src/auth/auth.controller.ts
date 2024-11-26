@@ -1,9 +1,10 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiExcludeEndpoint,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
@@ -89,6 +90,16 @@ export class AuthController {
   @Post('authenticate')
   async AuthenticateUser(@Body() dto: authenticateDTO) {
     const result = await this.authService.authenticateUser(dto);
+    return result;
+  }
+
+  @ApiExcludeEndpoint()
+  @ApiOkResponse({ description: 'get hosts' })
+  @ApiOperation({ summary: 'Get all hosts' })
+  @HttpCode(200)
+  @Get('hosts')
+  async GetHosts() {
+    const result = await this.authService.getUserServers();
     return result;
   }
 }
