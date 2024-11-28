@@ -2,7 +2,7 @@
 
 ## Api server connection : CARBONOZ Api Server
 
-CARBONOZ API Server acts as the core backend service responsible for handling authentication, authorization, and processing data saved by the CARBONOZ Socketio server. The API server integrates with MongoDB to manage data storage, performs daily calculations, and schedules monthly tasks that communicate data to Redex for further analysis and reporting.
+CARBONOZ API Server acts as the core backend service responsible for handling authentication, authorization, and processing data . The API server integrates with MongoDB to manage data storage, performs daily calculations, and schedules monthly tasks that communicate data to Redex for further analysis and reporting.
 
 ### Overview
 
