@@ -1,4 +1,4 @@
-import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiInternalServerErrorResponse,
@@ -10,6 +10,10 @@ import { Response } from 'express';
 import { AllowRoles, GetUser } from 'src/auth/decorators';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
+import {
+  FilterEnergyForLastMonthsDTO,
+  FilterTimeEnergyDTO,
+} from 'src/energy/dto';
 import { EnergyService } from 'src/energy/energy.service';
 
 @Controller('reports')
@@ -22,9 +26,13 @@ import { EnergyService } from 'src/energy/energy.service';
 export class ReportsController {
   constructor(private readonly energyService: EnergyService) {}
   @Get('download/csv/7')
-  async downloadCsv7days(@Res() res: Response, @GetUser() user: User) {
+  async downloadCsv7days(
+    @Res() res: Response,
+    @GetUser() user: User,
+    @Query() dto: FilterTimeEnergyDTO,
+  ) {
     const { file, fileName } =
-      await this.energyService.generateCsvFileForLastSevenDays(user);
+      await this.energyService.generateCsvFileForLastSevenDays(user, dto);
     res.set({
       'Content-Type': 'text/csv',
       'Content-Disposition': `attachment; filename=${fileName}.csv`,
@@ -33,9 +41,13 @@ export class ReportsController {
   }
 
   @Get('download/csv/30')
-  async downloadCsv30days(@Res() res: Response, @GetUser() user: User) {
+  async downloadCsv30days(
+    @Res() res: Response,
+    @GetUser() user: User,
+    @Query() dto: FilterTimeEnergyDTO,
+  ) {
     const { file, fileName } =
-      await this.energyService.generateCsvFileForLast30Days(user);
+      await this.energyService.generateCsvFileForLast30Days(user, dto);
     res.set({
       'Content-Type': 'text/csv',
       'Content-Disposition': `attachment; filename=${fileName}.csv`,
@@ -44,9 +56,13 @@ export class ReportsController {
   }
 
   @Get('download/csv/12')
-  async downloadCsv12Months(@Res() res: Response, @GetUser() user: User) {
+  async downloadCsv12Months(
+    @Res() res: Response,
+    @GetUser() user: User,
+    @Query() dto: FilterEnergyForLastMonthsDTO,
+  ) {
     const { file, fileName } =
-      await this.energyService.generateCsvFileForLast12Months(user);
+      await this.energyService.generateCsvFileForLast12Months(user, dto);
     res.set({
       'Content-Type': 'text/csv',
       'Content-Disposition': `attachment; filename=${fileName}.csv`,
