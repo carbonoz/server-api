@@ -240,7 +240,7 @@ export class EnergyService {
       where: { userId: user.id },
     });
 
-    const timezone = dto.timezone ? dto.timezone : 'Indian/Mauritius';
+    const timezone = dto?.timezone ? dto?.timezone : 'Indian/Mauritius';
     const today = new Date();
     const startDate = dto?.from
       ? parseISO(formatInTimeZone(new Date(dto.from), timezone, 'yyyy-MM-dd'))
@@ -352,7 +352,7 @@ export class EnergyService {
     const today = new Date();
     const startDate = subMonths(today, 11);
 
-    const timezone = dto.timezone ? dto.timezone : 'Indian/Mauritius';
+    const timezone = dto?.timezone ? dto?.timezone : 'Indian/Mauritius';
 
     const totals = await this.prismaService.totalEnergy.findMany({
       where: {
@@ -549,8 +549,8 @@ export class EnergyService {
   }
 
   //CSV file downloads
-  async generateCsvFileForLastSevenDays(user: User) {
-    const result = await this.getTotalsForDateRange(user, 7);
+  async generateCsvFileForLastSevenDays(user: User, dto: FilterTimeEnergyDTO) {
+    const result = await this.getTotalsForDateRange(user, 7, dto);
 
     const csvHeaders = [
       { id: 'date', title: 'Date' },
@@ -583,8 +583,8 @@ export class EnergyService {
     return { file: csvContent, fileName: 'energy_data_last_7_days' };
   }
 
-  async generateCsvFileForLast30Days(user: User) {
-    const result = await this.getTotalsForDateRange(user, 30);
+  async generateCsvFileForLast30Days(user: User, dto: FilterTimeEnergyDTO) {
+    const result = await this.getTotalsForDateRange(user, 30, dto);
     const csvHeaders = [
       { id: 'date', title: 'Date' },
       { id: 'pvPower', title: 'PV Power' },
@@ -616,8 +616,11 @@ export class EnergyService {
     return { file: csvContent, fileName: 'energy_data_last_30_days' };
   }
 
-  async generateCsvFileForLast12Months(user: User) {
-    const result = await this.getTotalsEnergyLast12Months(user);
+  async generateCsvFileForLast12Months(
+    user: User,
+    dto?: FilterEnergyForLastMonthsDTO,
+  ) {
+    const result = await this.getTotalsEnergyLast12Months(user, dto);
     const csvHeaders = [
       { id: 'date', title: 'Date' },
       { id: 'pvPower', title: 'PV Power' },
