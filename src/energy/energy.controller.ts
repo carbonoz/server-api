@@ -12,7 +12,7 @@ import { GenericResponse } from 'src/__shared__/dto';
 import { AllowRoles, GetUser } from 'src/auth/decorators';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
-import { FilterTimeEnergyDTO } from './dto';
+import { FilterEnergyForLastMonthsDTO, FilterTimeEnergyDTO } from './dto';
 import { EnergyService } from './energy.service';
 
 @Controller('energy')
@@ -56,8 +56,14 @@ export class EnergyController {
   @HttpCode(200)
   @ApiOperation({ summary: 'energy data for last 12 months ' })
   @Get('total/12')
-  async topicsForlast12Months(@GetUser() user: User) {
-    const result = await this.energyService.getTotalsEnergyLast12Months(user);
+  async topicsForlast12Months(
+    @GetUser() user: User,
+    @Query() dto: FilterEnergyForLastMonthsDTO,
+  ) {
+    const result = await this.energyService.getTotalsEnergyLast12Months(
+      user,
+      dto,
+    );
     return new GenericResponse('energy-data for last 12 months', result);
   }
 
