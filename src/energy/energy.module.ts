@@ -1,9 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { EnergyController } from './energy.controller';
 import { EnergyService } from './energy.service';
 
+@Global()
 @Module({
   controllers: [EnergyController],
-  providers: [EnergyService]
+  providers: [EnergyService],
+  exports: [EnergyService],
 })
 export class EnergyModule {}

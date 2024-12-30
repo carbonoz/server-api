@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TotalEnergy, User } from '@prisma/client';
+import { createObjectCsvStringifier } from 'csv-writer';
 import {
   endOfDay,
   endOfMonth,
@@ -18,9 +19,41 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import { FilterTimeEnergyDTO } from './dto';
 
+interface DailyEntry {
+  date: string;
+  pvPower: string;
+  loadPower: string;
+  gridIn: string;
+  gridOut: string;
+  batteryCharged: string;
+  batteryDischarged: string;
+}
+
+interface MonthlyEntry {
+  id: string;
+  date: string;
+  pvPower: number;
+  loadPower: number;
+  gridIn: number;
+  gridOut: number;
+  batteryCharged: number;
+  batteryDischarged: number;
+  userId: string;
+}
+
 @Injectable()
 export class EnergyService {
   constructor(private prismaService: PrismaService) {}
+
+  /**
+   * Helper function to calculate the difference between two string numeric values.
+   * If the difference is negative, returns the current value.
+   */
+
+  private calculateDifference(current: string, previous: string): string {
+    const difference = (parseFloat(current) - parseFloat(previous)).toFixed(2);
+    return parseFloat(difference) > 0 ? difference : current;
+  }
 
   private async adjustTotals(result: TotalEnergy[]): Promise<TotalEnergy[]> {
     result.sort(
@@ -71,6 +104,80 @@ export class EnergyService {
         });
       } else {
         updatedResult.push(todayData);
+      }
+    }
+
+    return updatedResult;
+  }
+
+  private async adjustMonthlyTotals(
+    result: TotalEnergy[],
+  ): Promise<Array<DailyEntry>> {
+    result.sort(
+      (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime(),
+    );
+
+    const lastValuesMap = new Map<string, TotalEnergy>();
+
+    for (const entry of result) {
+      lastValuesMap.set(entry.date, entry);
+    }
+
+    const updatedResult: Array<{
+      date: string;
+      pvPower: string;
+      loadPower: string;
+      gridIn: string;
+      gridOut: string;
+      batteryCharged: string;
+      batteryDischarged: string;
+    }> = [];
+
+    const dates = Array.from(lastValuesMap.keys());
+
+    for (let i = 0; i < dates.length; i++) {
+      const todayDate = dates[i];
+      const todayData = lastValuesMap.get(todayDate);
+      const yesterdayData = lastValuesMap.get(dates[i - 1]);
+
+      if (yesterdayData) {
+        updatedResult.push({
+          date: todayDate,
+          pvPower: this.calculateDifference(
+            todayData.pvPower,
+            yesterdayData.pvPower,
+          ),
+          loadPower: this.calculateDifference(
+            todayData.loadPower,
+            yesterdayData.loadPower,
+          ),
+          gridIn: this.calculateDifference(
+            todayData.gridIn,
+            yesterdayData.gridIn,
+          ),
+          gridOut: this.calculateDifference(
+            todayData.gridOut,
+            yesterdayData.gridOut,
+          ),
+          batteryCharged: this.calculateDifference(
+            todayData.batteryCharged,
+            yesterdayData.batteryCharged,
+          ),
+          batteryDischarged: this.calculateDifference(
+            todayData.batteryDischarged,
+            yesterdayData.batteryDischarged,
+          ),
+        });
+      } else {
+        updatedResult.push({
+          date: todayDate,
+          pvPower: todayData.pvPower,
+          loadPower: todayData.loadPower,
+          gridIn: todayData.gridIn,
+          gridOut: todayData.gridOut,
+          batteryCharged: todayData.batteryCharged,
+          batteryDischarged: todayData.batteryDischarged,
+        });
       }
     }
 
@@ -235,7 +342,7 @@ export class EnergyService {
     return this.getTotalsForDateRange(user, 30, dto);
   }
 
-  async getTotalsEnergyLast12Months(user: User): Promise<Array<TotalEnergy>> {
+  async getTotalsEnergyLast12Months(user: User) {
     const userPorts = await this.prismaService.userPorts.findFirst({
       where: { userId: user.id },
     });
@@ -267,69 +374,76 @@ export class EnergyService {
       },
     });
 
-    const monthlyTotals: { [key: string]: TotalEnergy } = {};
+    const result = await this.adjustMonthlyTotals(totals);
 
-    for (let i = 0; i < 12; i++) {
-      const currentMonth = subMonths(today, 11 - i);
-      const formattedMonth = format(startOfMonth(currentMonth), 'yyyy-MM');
+    const months = Array.from({ length: 12 }, (_, i) =>
+      subMonths(today, 11 - i),
+    );
 
-      monthlyTotals[formattedMonth] = {
-        id: uuidv4(), // Generate a unique ID
-        pvPower: '0',
-        loadPower: '0',
-        gridIn: '0',
-        gridOut: '0',
-        batteryCharged: '0',
-        batteryDischarged: '0',
-        date: `${formattedMonth}-01T00:00:00Z`,
-        topic: null,
-        port: userPorts?.port || '',
-        userId: user.id,
-      };
-    }
+    const monthlyData = result.reduce<Record<string, MonthlyEntry>>(
+      (acc, entry) => {
+        const month = format(parseISO(entry.date), 'yyyy-MM');
 
-    totals.forEach((t) => {
-      const totalDate = format(parseISO(t.date), 'yyyy-MM');
-      if (monthlyTotals[totalDate]) {
-        monthlyTotals[totalDate] = {
-          ...monthlyTotals[totalDate],
-          pvPower: (
-            parseFloat(monthlyTotals[totalDate].pvPower) +
-            parseFloat(t.pvPower || '0')
-          ).toString(),
-          loadPower: (
-            parseFloat(monthlyTotals[totalDate].loadPower) +
-            parseFloat(t.loadPower || '0')
-          ).toString(),
-          gridIn: (
-            parseFloat(monthlyTotals[totalDate].gridIn) +
-            parseFloat(t.gridIn || '0')
-          ).toString(),
-          gridOut: (
-            parseFloat(monthlyTotals[totalDate].gridOut) +
-            parseFloat(t.gridOut || '0')
-          ).toString(),
-          batteryCharged: (
-            parseFloat(monthlyTotals[totalDate].batteryCharged) +
-            parseFloat(t.batteryCharged || '0')
-          ).toString(),
-          batteryDischarged: (
-            parseFloat(monthlyTotals[totalDate].batteryDischarged) +
-            parseFloat(t.batteryDischarged || '0')
-          ).toString(),
+        if (!acc[month]) {
+          acc[month] = {
+            id: uuidv4(),
+            date: `${month}-01T00:00:00Z`, // Set the first day of the month
+            pvPower: 0,
+            loadPower: 0,
+            gridIn: 0,
+            gridOut: 0,
+            batteryCharged: 0,
+            batteryDischarged: 0,
+            userId: user.id,
+          };
+        }
+
+        acc[month].pvPower += parseFloat(entry.pvPower);
+        acc[month].loadPower += parseFloat(entry.loadPower);
+        acc[month].gridIn += parseFloat(entry.gridIn);
+        acc[month].gridOut += parseFloat(entry.gridOut);
+        acc[month].batteryCharged += parseFloat(entry.batteryCharged);
+        acc[month].batteryDischarged += parseFloat(entry.batteryDischarged);
+
+        return acc;
+      },
+      {},
+    );
+
+    months.forEach((month) => {
+      const formattedMonth = format(startOfMonth(month), 'yyyy-MM');
+      if (!monthlyData[formattedMonth]) {
+        monthlyData[formattedMonth] = {
+          id: uuidv4(),
+          date: `${formattedMonth}-01T00:00:00Z`,
+          pvPower: 0,
+          loadPower: 0,
+          gridIn: 0,
+          gridOut: 0,
+          batteryCharged: 0,
+          batteryDischarged: 0,
+          userId: user.id,
         };
       }
     });
 
-    const result: Array<TotalEnergy> = Object.keys(monthlyTotals).map(
-      (month) => ({
-        ...monthlyTotals[month],
-        id: uuidv4(), // Generate a unique ID
-        date: `${month}-01T00:00:00Z`,
-      }),
-    );
+    const formattedMonthlyData = Object.values(monthlyData)
+      .sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB.getMonth() - dateA.getMonth(); // Sort by month (ascending)
+      })
+      .map((entry) => ({
+        ...entry,
+        pvPower: entry.pvPower.toFixed(2),
+        loadPower: entry.loadPower.toFixed(2),
+        gridIn: entry.gridIn.toFixed(2),
+        gridOut: entry.gridOut.toFixed(2),
+        batteryCharged: entry.batteryCharged.toFixed(2),
+        batteryDischarged: entry.batteryDischarged.toFixed(2),
+      }));
 
-    return result.reverse(); // Reverse to make the most recent month first
+    return formattedMonthlyData;
   }
 
   async getTotalsEnergyLast10Years(user: User): Promise<Array<TotalEnergy>> {
@@ -430,5 +544,106 @@ export class EnergyService {
     );
 
     return result.reverse(); // Reverse to make the most recent year first
+  }
+
+  //CSV file downloads
+  async generateCsvFileForLastSevenDays(user: User) {
+    const result = await this.getTotalsForDateRange(user, 7);
+
+    const csvHeaders = [
+      { id: 'date', title: 'Date' },
+      { id: 'pvPower', title: 'PV Power' },
+      { id: 'loadPower', title: 'Load Power' },
+      { id: 'gridIn', title: 'Grid In' },
+      { id: 'gridOut', title: 'Grid Out' },
+      { id: 'batteryCharged', title: 'Battery Charged' },
+      { id: 'batteryDischarged', title: 'Battery Discharged' },
+    ];
+
+    const csvStringifier = createObjectCsvStringifier({
+      header: csvHeaders,
+    });
+
+    const records = result.map((data) => ({
+      date: format(data.date, 'yyyy-MM-dd'),
+      pvPower: data.pvPower,
+      loadPower: data.loadPower,
+      gridIn: data.gridIn,
+      gridOut: data.gridOut,
+      batteryCharged: data.batteryCharged,
+      batteryDischarged: data.batteryDischarged,
+    }));
+
+    const csvContent =
+      csvStringifier.getHeaderString() +
+      csvStringifier.stringifyRecords(records);
+
+    return { file: csvContent, fileName: 'energy_data_last_7_days' };
+  }
+
+  async generateCsvFileForLast30Days(user: User) {
+    const result = await this.getTotalsForDateRange(user, 30);
+    const csvHeaders = [
+      { id: 'date', title: 'Date' },
+      { id: 'pvPower', title: 'PV Power' },
+      { id: 'loadPower', title: 'Load Power' },
+      { id: 'gridIn', title: 'Grid In' },
+      { id: 'gridOut', title: 'Grid Out' },
+      { id: 'batteryCharged', title: 'Battery Charged' },
+      { id: 'batteryDischarged', title: 'Battery Discharged' },
+    ];
+
+    const csvStringifier = createObjectCsvStringifier({
+      header: csvHeaders,
+    });
+
+    const records = result.map((data) => ({
+      date: format(data.date, 'yyyy-MM-dd'),
+      pvPower: data.pvPower,
+      loadPower: data.loadPower,
+      gridIn: data.gridIn,
+      gridOut: data.gridOut,
+      batteryCharged: data.batteryCharged,
+      batteryDischarged: data.batteryDischarged,
+    }));
+
+    const csvContent =
+      csvStringifier.getHeaderString() +
+      csvStringifier.stringifyRecords(records);
+
+    return { file: csvContent, fileName: 'energy_data_last_30_days' };
+  }
+
+  async generateCsvFileForLast12Months(user: User) {
+    const result = await this.getTotalsEnergyLast12Months(user);
+    const csvHeaders = [
+      { id: 'date', title: 'Date' },
+      { id: 'pvPower', title: 'PV Power' },
+      { id: 'loadPower', title: 'Load Power' },
+      { id: 'gridIn', title: 'Grid In' },
+      { id: 'gridOut', title: 'Grid Out' },
+      { id: 'batteryCharged', title: 'Battery Charged' },
+      { id: 'batteryDischarged', title: 'Battery Discharged' },
+    ];
+
+    const csvStringifier = createObjectCsvStringifier({
+      header: csvHeaders,
+    });
+
+    const records = result.map((data) => ({
+      date: format(data.date, 'yyyy-MM'),
+      pvPower: data.pvPower,
+      loadPower: data.loadPower,
+      gridIn: data.gridIn,
+      gridOut: data.gridOut,
+      batteryCharged: data.batteryCharged,
+      batteryDischarged: data.batteryDischarged,
+    }));
+
+    const csvContent =
+      csvStringifier.getHeaderString() +
+      csvStringifier.stringifyRecords(records);
+
+    return { file: csvContent, fileName: 'energy_data_last_12_months' };
   }
 }

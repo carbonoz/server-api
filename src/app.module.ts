@@ -21,6 +21,7 @@ import { SystemstepsModule } from './systemsteps/systemsteps.module';
 import { TopicModule } from './topic/topic.module';
 import { UserModule } from './user/user.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ScheduleModule } from './schedule/schedule.module';
     CertificationModule,
     MailsModule,
     ScheduleModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [
