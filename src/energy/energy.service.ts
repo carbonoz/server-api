@@ -17,7 +17,7 @@ import {
 import { formatInTimeZone } from 'date-fns-tz';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
-import { FilterTimeEnergyDTO } from './dto';
+import { FilterEnergyForLastMonthsDTO, FilterTimeEnergyDTO } from './dto';
 
 interface DailyEntry {
   date: string;
@@ -240,8 +240,7 @@ export class EnergyService {
       where: { userId: user.id },
     });
 
-    const timezone = 'Indian/Mauritius';
-
+    const timezone = dto.timezone ? dto.timezone : 'Indian/Mauritius';
     const today = new Date();
     const startDate = dto?.from
       ? parseISO(formatInTimeZone(new Date(dto.from), timezone, 'yyyy-MM-dd'))
@@ -342,15 +341,18 @@ export class EnergyService {
     return this.getTotalsForDateRange(user, 30, dto);
   }
 
-  async getTotalsEnergyLast12Months(user: User) {
+  async getTotalsEnergyLast12Months(
+    user: User,
+    dto?: FilterEnergyForLastMonthsDTO,
+  ) {
     const userPorts = await this.prismaService.userPorts.findFirst({
       where: { userId: user.id },
     });
 
     const today = new Date();
-    const startDate = subMonths(today, 11); // 12 months including this month
+    const startDate = subMonths(today, 11);
 
-    const timezone = 'Indian/Mauritius';
+    const timezone = dto.timezone ? dto.timezone : 'Indian/Mauritius';
 
     const totals = await this.prismaService.totalEnergy.findMany({
       where: {
