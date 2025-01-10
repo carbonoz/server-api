@@ -240,7 +240,13 @@ export class EnergyService {
       where: { userId: user.id },
     });
 
-    const timezone = dto?.timezone ? dto?.timezone : 'Indian/Mauritius';
+    const information = await this.prismaService.userInformation.findFirst({
+      where: { userId: user.id },
+    });
+
+    const defaultTimezone = information?.customerTimezone;
+
+    const timezone = dto?.timezone ? dto?.timezone : defaultTimezone;
     const today = new Date();
     const startDate = dto?.from
       ? parseISO(formatInTimeZone(new Date(dto.from), timezone, 'yyyy-MM-dd'))
