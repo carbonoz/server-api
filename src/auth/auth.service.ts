@@ -144,6 +144,10 @@ export class AuthService {
         },
       });
 
+      if (user.activeStatus === false && user.active === true) {
+        throw new ForbiddenException('User is disabled');
+      }
+
       if (user.active === false) {
         const tokenData = this.generateToken(user, userPort?.port, true);
         const message = await this.sendEmail(user, tokenData);
@@ -154,6 +158,7 @@ export class AuthService {
           },
         };
       }
+
       return this.generateToken(user, userPort?.port);
     }
   }

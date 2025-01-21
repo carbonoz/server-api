@@ -6,6 +6,7 @@ export interface IAppConfig {
   swaggerEnabled?: boolean;
   redex?: IRedexConfig;
   frontedUrl: string;
+  admin: amdinConfig;
 }
 
 interface JwtConfig {
@@ -17,4 +18,9 @@ interface IRedexConfig {
   apiKey: string;
   clientId: string;
   clientSecret: string;
+}
+
+interface amdinConfig {
+  email: string;
+  password: string;
 }

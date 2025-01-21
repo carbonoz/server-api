@@ -19,6 +19,10 @@ export function appConfig(): IAppConfig {
       clientSecret: process.env.REDEX_CLIENT_SECRET,
     },
     frontedUrl: process.env.FRONTED_URL,
+    admin: {
+      email: process.env.ADMIN_EMAIL,
+      password: process.env.ADMIN_PASSWORD,
+    },
   };
 }
 

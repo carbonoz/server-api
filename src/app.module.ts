@@ -22,6 +22,8 @@ import { TopicModule } from './topic/topic.module';
 import { UserModule } from './user/user.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ReportsModule } from './reports/reports.module';
+import { AdminModule } from './admin/admin.module';
+import { SeedData } from './seeder';
 
 @Module({
   imports: [
@@ -48,6 +50,7 @@ import { ReportsModule } from './reports/reports.module';
     MailsModule,
     ScheduleModule,
     ReportsModule,
+    AdminModule,
   ],
   controllers: [],
   providers: [
@@ -62,6 +65,7 @@ import { ReportsModule } from './reports/reports.module';
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
     },
+    SeedData,
   ],
 })
 export class AppModule {}
