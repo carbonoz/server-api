@@ -1,18 +1,27 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { ERole, User } from '@prisma/client';
 import { GenericResponse } from 'src/__shared__/dto';
+import { AllowRoles, GetUser } from 'src/auth/decorators';
+import { JwtGuard } from 'src/auth/guard/jwt.guard';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { RedexRegisterDeviceDto } from './interface';
 import { RedexService } from './redex.service';
 
 @Controller('redex')
 @ApiTags('redex')
+@UseGuards(JwtGuard, RolesGuard)
+@AllowRoles(ERole.USER)
+@ApiBearerAuth()
+@ApiUnauthorizedResponse({ description: 'Unauthorized' })
 @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
 export class RedexController {
   constructor(private readonly redexService: RedexService) {}
@@ -25,20 +34,15 @@ export class RedexController {
     return new GenericResponse('redex token', result);
   }
 
-  @ApiOkResponse({ description: 'totals retrieved successfully' })
-  @ApiOperation({ summary: 'totals' })
-  @Get('totals')
-  async getTotals() {
-    const result = await this.redexService.getTotals();
-    return new GenericResponse('totals', result);
-  }
-
   @ApiCreatedResponse({ description: 'Device registered successfully' })
   @ApiOperation({ summary: 'register Devices' })
   @Post('device')
   @ApiBody({ type: RedexRegisterDeviceDto })
-  async registerDevices(@Body() dto: RedexRegisterDeviceDto) {
-    const result = await this.redexService.registerGroupDevice(dto);
+  async registerDevices(
+    @Body() dto: RedexRegisterDeviceDto,
+    @GetUser() user: User,
+  ) {
+    const result = await this.redexService.registerGroupDevice(dto, user);
     return new GenericResponse('Device registered', result);
   }
 

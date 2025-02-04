@@ -7,14 +7,15 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { LogsService } from 'src/logs/logs.service';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  catch(exception: any, host: ArgumentsHost): void {
+  constructor(private readonly logService: LogsService) {}
+  async catch(exception: any, host: ArgumentsHost): Promise<void> {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const response = ctx.getResponse();
+    const request = ctx.getRequest();
     const isHttp = exception instanceof HttpException;
     const status = isHttp
       ? exception.getStatus()
@@ -29,6 +30,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? (exceptionResponse as Record<string, unknown>)
         : { message: exceptionResponse };
 
+    await this.logService.logRequest(request, response, undefined, exception);
     Logger.error(
       `${request.url} ${request.method}`,
       exception.stack,

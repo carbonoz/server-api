@@ -2,8 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TotalEnergy, User } from '@prisma/client';
-import { addDays, format, parseISO, startOfDay } from 'date-fns';
-import { formatInTimeZone } from 'date-fns-tz';
+import { format, parseISO } from 'date-fns';
 import * as FormData from 'form-data';
 import { lastValueFrom } from 'rxjs';
 import { IAppConfig } from 'src/__shared__/interfaces';
@@ -159,118 +158,132 @@ export class RedexService {
     }
   }
 
-  async getTotals() {
-    const timeZone = 'Indian/Mauritius';
-    const normalizeDate = () => {
-      const startOfDayInTimeZone = startOfDay(new Date());
-      const formattedStartOfDay = formatInTimeZone(
-        startOfDayInTimeZone,
-        timeZone,
-        "yyyy-MM-dd'T'HH:mm:ssXXX",
-      );
-      return formattedStartOfDay;
-    };
-
-    const date = normalizeDate();
-
-    const users = await this.prismaService.user.findMany({
-      include: {
-        Box: true,
-        UserPorts: true,
+  async registerGroupDevice(dto: RedexRegisterDeviceDto, user?: User) {
+    const redexDevice = await this.prismaService.redexRegisterDevice.create({
+      data: {
+        userId: user.id,
+        countryCode: dto.CountryCode,
+        groupedEnglishName: dto.GroupedEnglishName,
+        groupedLocalName: dto.GroupedLocalName,
+        province: dto.Province,
+        timezone: dto.Timezone,
+        generationDataFrequency: dto.GenerationDataFrequency,
+        devices: {
+          create: dto.Devices.map((device) => ({
+            installationName: device.InstallationName,
+            address: device.Address,
+            postalCode: device.PostalCode,
+            longitude: device.Longitude,
+            latitude: device.Latitude,
+            gridConnectionDate: new Date(device.GridConnectionDate),
+            ownersDeclarationStartDate: new Date(
+              device.OwnersDeclarationStartDate,
+            ),
+            ownersDeclarationEndDate: device.OwnersDeclarationEndDate
+              ? new Date(device.OwnersDeclarationEndDate)
+              : null,
+            domestic: device.Domestic,
+            feedInTariff: device.FeedInTariff,
+            declarationFormFileId: device.DeclarationFormFileId,
+            percentageRenewable: device.PercentageRenewable,
+            inverters: {
+              create: device.Inverters.map((inverter) => ({
+                remoteInvId: inverter.RemoteInvId,
+                electronicSerialNumber: inverter.ElectronicSerialNumber,
+                brandCode: inverter.BrandCode,
+                otherBrandName: inverter.OtherBrandName,
+                installedCapacity: inverter.InstalledCapacity,
+              })),
+            },
+          })),
+        },
       },
     });
-    const results = [];
-    for (const user of users) {
-      const { Box, UserPorts } = user;
 
-      for (const port of UserPorts) {
-        const totalEnergy = await this.prismaService.totalEnergy.findMany({
-          where: {
-            port: port.port,
-            date: {
-              gte: date,
-              lt: addDays(new Date(date), 1).toISOString(),
-            },
-          },
-          select: {
-            pvPower: true,
-            date: true,
-          },
-        });
+    const redexFileId = dto.Devices.map(
+      (device) => device.DeclarationFormFileId,
+    );
+    const row = await this.prismaService.redexInformation.findFirst({
+      where: {
+        redexFileId: String(redexFileId),
+      },
+    });
+    const Devices = dto.Devices.map((device) => device.Inverters);
+    const invArrayFlat = Devices.flatMap((item) => item);
+    const inArray: Array<string> = [];
+    invArrayFlat.forEach((item) => {
+      inArray.push(item.RemoteInvId);
+    });
+    await this.prismaService.redexInformation.update({
+      where: {
+        id: row.id,
+      },
+      data: {
+        remoteInvIds: inArray,
+      },
+    });
 
-        results.push({
-          userId: user.id,
-          serialNumber: Box.map((b) => b.serialNumber).join(', '),
-          port: port.port,
-          totalEnergy,
-        });
-      }
-    }
-    return results;
-  }
+    return redexDevice;
 
-  async registerGroupDevice(dto: RedexRegisterDeviceDto) {
-    const token = await this.generateRedexToken();
-
-    const body = {
-      ...dto,
-    };
-    try {
-      const registrationResponse = (
-        await lastValueFrom(
-          this.httpService.post<RedexRegDeviceResponse>(
-            `${
-              this.configService.get('redex').url
-            }/device-applications/i-rec/grouped`,
-            body,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-            },
-          ),
-        )
-      ).data;
-      const redexFileId = dto.Devices.map(
-        (device) => device.DeclarationFormFileId,
-      );
-      const row = await this.prismaService.redexInformation.findFirst({
-        where: {
-          redexFileId: String(redexFileId),
-        },
-      });
-      const Devices = dto.Devices.map((device) => device.Inverters);
-      const invArrayFlat = Devices.flatMap((item) => item);
-      const inArray: Array<string> = [];
-      invArrayFlat.forEach((item) => {
-        inArray.push(item.RemoteInvId);
-      });
-      await this.prismaService.redexInformation.update({
-        where: {
-          id: row.id,
-        },
-        data: {
-          remoteInvIds: inArray,
-        },
-      });
-      return registrationResponse;
-    } catch (error) {
-      this.logger.error('Error registering devices', error);
-      if (error.response) {
-        this.logger.error('Error response data:', error.response.data);
-        this.logger.error('Error response status:', error.response.status);
-        this.logger.error('Error response headers:', error.response.headers);
-      } else if (error.request) {
-        this.logger.error('No response received:', error.request);
-      } else {
-        this.logger.error('Axios error:', error.message);
-      }
-      throw new BadRequestException({
-        message: 'Failed to register Device',
-        error: error.message,
-      });
-    }
+    // const body = {
+    //   ...dto,
+    // };
+    // try {
+    //   const registrationResponse = (
+    //     await lastValueFrom(
+    //       this.httpService.post<RedexRegDeviceResponse>(
+    //         `${
+    //           this.configService.get('redex').url
+    //         }/device-applications/i-rec/grouped`,
+    //         body,
+    //         {
+    //           headers: {
+    //             'Content-Type': 'application/json',
+    //             Authorization: `Bearer ${token}`,
+    //           },
+    //         },
+    //       ),
+    //     )
+    //   ).data;
+    //   const redexFileId = dto.Devices.map(
+    //     (device) => device.DeclarationFormFileId,
+    //   );
+    //   const row = await this.prismaService.redexInformation.findFirst({
+    //     where: {
+    //       redexFileId: String(redexFileId),
+    //     },
+    //   });
+    //   const Devices = dto.Devices.map((device) => device.Inverters);
+    //   const invArrayFlat = Devices.flatMap((item) => item);
+    //   const inArray: Array<string> = [];
+    //   invArrayFlat.forEach((item) => {
+    //     inArray.push(item.RemoteInvId);
+    //   });
+    //   await this.prismaService.redexInformation.update({
+    //     where: {
+    //       id: row.id,
+    //     },
+    //     data: {
+    //       remoteInvIds: inArray,
+    //     },
+    //   });
+    //   return registrationResponse;
+    // } catch (error) {
+    //   this.logger.error('Error registering devices', error);
+    //   if (error.response) {
+    //     this.logger.error('Error response data:', error.response.data);
+    //     this.logger.error('Error response status:', error.response.status);
+    //     this.logger.error('Error response headers:', error.response.headers);
+    //   } else if (error.request) {
+    //     this.logger.error('No response received:', error.request);
+    //   } else {
+    //     this.logger.error('Axios error:', error.message);
+    //   }
+    //   throw new BadRequestException({
+    //     message: 'Failed to register Device',
+    //     error: error.message,
+    //   });
+    // }
   }
 
   async getUserFileId(user: User) {
@@ -414,5 +427,105 @@ export class RedexService {
     }
 
     return;
+  }
+
+  async sendRegisteredDeviceToRedex() {
+    const token = await this.generateRedexToken();
+
+    const allDevices = await this.prismaService.redexRegisterDevice.findMany({
+      where: {
+        deviceRegistered: false,
+      },
+      include: {
+        devices: {
+          include: {
+            inverters: true,
+          },
+        },
+      },
+    });
+
+    if (allDevices.length === 0) {
+      throw new BadRequestException('No data to be sent ');
+    } else {
+      try {
+        for (const deviceGroup of allDevices) {
+          const body = {
+            CountryCode: deviceGroup.countryCode,
+            GroupedEnglishName: deviceGroup.groupedEnglishName,
+            GroupedLocalName: deviceGroup.groupedLocalName,
+            Province: deviceGroup.province,
+            Timezone: deviceGroup.timezone,
+            GenerationDataFrequency: deviceGroup.generationDataFrequency,
+            Devices: deviceGroup.devices.map((device) => ({
+              InstallationName: device.installationName,
+              Address: device.address,
+              PostalCode: device.postalCode,
+              Longitude: device.longitude,
+              Latitude: device.latitude,
+              GridConnectionDate: format(
+                device.gridConnectionDate,
+                'yyyy-MM-dd',
+              ),
+              OwnersDeclarationStartDate: format(
+                device.ownersDeclarationStartDate,
+                'yyyy-MM-dd',
+              ),
+              OwnersDeclarationEndDate: format(
+                device.ownersDeclarationEndDate,
+                'yyyy-MM-dd',
+              ),
+              Domestic: device.domestic,
+              FeedInTariff: device.feedInTariff,
+              DeclarationFormFileId: device.declarationFormFileId,
+              PercentageRenewable: device.percentageRenewable,
+              Inverters: device.inverters.map((inverter) => ({
+                RemoteInvId: inverter.remoteInvId,
+                ElectronicSerialNumber: inverter.electronicSerialNumber,
+                BrandCode: inverter.brandCode,
+                OtherBrandName: inverter.otherBrandName,
+                InstalledCapacity: inverter.installedCapacity,
+              })),
+            })),
+          };
+
+          const response = await lastValueFrom(
+            this.httpService.post<RedexRegDeviceResponse>(
+              `${
+                this.configService.get('redex').url
+              }/device-applications/i-rec/grouped`,
+              body,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+              },
+            ),
+          );
+          if (response) {
+            await this.prismaService.redexRegisterDevice.update({
+              where: { id: deviceGroup.id },
+              data: { deviceRegistered: true },
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.error('Error registering devices', error);
+        if (error.response) {
+          this.logger.error('Error response data:', error.response.data);
+          this.logger.error('Error response status:', error.response.status);
+          this.logger.error('Error response headers:', error.response.headers);
+        } else if (error.request) {
+          this.logger.error('No response received:', error.request);
+        } else {
+          this.logger.error('Axios error:', error.message);
+        }
+        throw new BadRequestException({
+          message: 'Failed to register Device',
+          error: error.message,
+        });
+      }
+    }
   }
 }
