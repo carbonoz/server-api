@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
@@ -25,18 +26,22 @@ import {
 import { ERole } from '@prisma/client';
 import { GenericResponse } from 'src/__shared__/dto';
 import { IPagination } from 'src/__shared__/interfaces/pagination-interface';
-import { AuthService } from 'src/auth/auth.service';
 import {
   AllowRoles,
   PageResponse,
   Paginated,
   PaginationParams,
 } from 'src/auth/decorators';
-import { CreateUserDto } from 'src/auth/dto';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { RedexService } from 'src/redex/redex.service';
 import { AdminService } from './admin.service';
-import { DeactivateUsersDto, FilterUsers } from './dto';
+import {
+  AdminSignUserDto,
+  DeactivateUsersDto,
+  FilterRedexInfoDto,
+  FilterUsers,
+} from './dto';
 
 @Controller('admin')
 @ApiTags('admin')
@@ -48,12 +53,12 @@ import { DeactivateUsersDto, FilterUsers } from './dto';
 @ApiRequestTimeoutResponse({ description: 'Internet Error' })
 export class AdminController {
   constructor(
-    private readonly authService: AuthService,
     private readonly adminService: AdminService,
+    private readonly redexService: RedexService,
   ) {}
 
   @ApiOkResponse({
-    description: 'user additional assets retrieved successfully',
+    description: 'users retrieved successfully',
   })
   @HttpCode(200)
   @PageResponse()
@@ -71,11 +76,11 @@ export class AdminController {
   @ApiCreatedResponse({ description: 'Admin  created User successfully' })
   @ApiOperation({ summary: 'Admin do user registration' })
   @ApiConflictResponse({ description: 'User already exists' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiBody({ type: AdminSignUserDto })
   @Post('sign-users')
-  async addUser(@Body() dto: CreateUserDto) {
-    const result = await this.authService.createUser(dto);
-    return new GenericResponse('user created', result);
+  async addUser(@Body() dto: AdminSignUserDto) {
+    const result = await this.adminService.signUsersUp(dto);
+    return new GenericResponse('Admin', result);
   }
 
   @ApiOkResponse({
@@ -88,5 +93,42 @@ export class AdminController {
   async toogleActivation(@Body() dto: DeactivateUsersDto) {
     const result = await this.adminService.toogleUsersActivation(dto);
     return new GenericResponse('', result);
+  }
+
+  @ApiOkResponse({
+    description: 'logs retrieved successfully',
+  })
+  @HttpCode(200)
+  @PageResponse()
+  @Paginated()
+  @ApiOperation({ summary: 'admin fetch logs' })
+  @Get('logs')
+  async getLogs(@PaginationParams() options: IPagination) {
+    const result = await this.adminService.getLogs(options);
+    return new GenericResponse('logs', result);
+  }
+  @ApiOkResponse({
+    description: 'logs retrieved successfully',
+  })
+  @HttpCode(200)
+  @PageResponse()
+  @Paginated()
+  @ApiOperation({ summary: 'admin fetch redex Info' })
+  @Get('redex-info')
+  async getRedexInfo(
+    @PaginationParams() options: IPagination,
+    @Query() dto: FilterRedexInfoDto,
+  ) {
+    const result = await this.adminService.getRedexFiles(options, dto);
+    return new GenericResponse('redex', result);
+  }
+
+  @ApiCreatedResponse({ description: 'Admin Sent Redex data  successfully' })
+  @ApiOperation({ summary: 'Admin Send Redex data ' })
+  @ApiBadRequestResponse({ description: 'No data to be sent to redex' })
+  @Post('send-to-redex')
+  async sentToRedex() {
+    await this.redexService.sendRegisteredDeviceToRedex();
+    return new GenericResponse('redex data sent succesfully', null);
   }
 }

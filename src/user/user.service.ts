@@ -23,6 +23,7 @@ export class UserService {
       },
       data: {
         password: dto.password,
+        defaultPassword: false,
       },
     });
     return newUser;

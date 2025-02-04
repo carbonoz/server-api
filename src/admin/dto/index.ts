@@ -14,6 +14,22 @@ export class FilterUsers {
   @IsEnum(EUserStatus)
   @ApiPropertyOptional({ required: false, enum: EUserStatus })
   status: EUserStatus;
+  @IsString()
+  @IsOptional()
+  @ApiPropertyOptional({
+    type: String,
+    required: false,
+    default: 'akashi',
+  })
+  name: string;
+  @IsString()
+  @IsOptional()
+  @ApiPropertyOptional({
+    type: String,
+    required: false,
+    default: 'christiannseko@gmail.com',
+  })
+  email: string;
 }
 
 export class DeactivateUsersDto {
@@ -42,4 +58,15 @@ export class AdminSignUserDto {
     default: 'christiannseko@gmail.com',
   })
   email: string;
+}
+
+export class FilterRedexInfoDto {
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    type: String,
+    required: false,
+    default: false,
+  })
+  registered: string;
 }

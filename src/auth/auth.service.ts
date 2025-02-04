@@ -58,7 +58,9 @@ export class AuthService {
     };
   }
 
-  async convertImageToBase64(url: string): Promise<string> {
+  public async convertImageToBase64(): Promise<string> {
+    const url =
+      'https://res.cloudinary.com/akashi/image/upload/v1726671139/1_wmbtla.jpg';
     const response = await axios.get(url, { responseType: 'arraybuffer' });
     const base64Image = Buffer.from(response.data, 'binary').toString('base64');
     return base64Image;
@@ -72,10 +74,8 @@ export class AuthService {
     const verificationUrl = `${this.config.get(
       'frontedUrl',
     )}/verify-email?token=${token}`;
-    const url =
-      'https://res.cloudinary.com/akashi/image/upload/v1726671139/1_wmbtla.jpg';
 
-    const imageBase64 = await this.convertImageToBase64(url);
+    const imageBase64 = await this.convertImageToBase64();
 
     const resetPasswordUrl = `${this.config.get(
       'frontedUrl',

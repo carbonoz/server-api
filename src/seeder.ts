@@ -1,4 +1,8 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ERole } from '@prisma/client';
 import * as argon from 'argon2';
@@ -21,6 +25,7 @@ export class SeedData implements OnModuleInit {
       const admin = await this.prismaService.user.findFirst({
         where: { role: ERole.ADMIN },
       });
+
       if (admin) return;
       const adminEmail = this.config.get('admin').email;
 
@@ -42,7 +47,7 @@ export class SeedData implements OnModuleInit {
         },
       });
     } catch (error) {
-      throw new Error(error);
+      throw new InternalServerErrorException(error);
     }
   }
 }
