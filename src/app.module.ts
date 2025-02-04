@@ -12,7 +12,7 @@ import { CertificationModule } from './certification/certification.module';
 import { EnergyModule } from './energy/energy.module';
 import { EventModule } from './event/event.module';
 import { InformationModule } from './information/information.module';
-import { LogsModule } from './logs/logs.module';
+import { LogsModule } from './logsM/logs.module';
 import { MailsModule } from './mails/mails.module';
 import { MeterModule } from './meter/meter.module';
 import { PartnersModule } from './partners/partners.module';

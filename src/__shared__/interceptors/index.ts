@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { Observable, catchError, tap } from 'rxjs';
-import { LogsService } from 'src/logs/logs.service';
+import { LogsService } from 'src/logsM/logs.service';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
