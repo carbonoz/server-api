@@ -64,6 +64,12 @@ export class EnergyService {
 
     for (let i = 0; i < result.length; i++) {
       const todayData = result[i];
+
+      if (todayData.mqttTopicPrefix !== 'solar_assistant_DEYE') {
+        updatedResult.push(todayData);
+        continue;
+      }
+
       const yesterdayData = result[i + 1] || {
         pvPower: '0',
         loadPower: '0',
@@ -75,6 +81,7 @@ export class EnergyService {
         topic: null,
         port: null,
         userId: '',
+        mqttTopicPrefix: '',
       };
 
       const todayDate = parseISO(todayData.date);
@@ -118,7 +125,6 @@ export class EnergyService {
     );
 
     const lastValuesMap = new Map<string, TotalEnergy>();
-
     for (const entry of result) {
       lastValuesMap.set(entry.date, entry);
     }
@@ -134,13 +140,30 @@ export class EnergyService {
     }> = [];
 
     const dates = Array.from(lastValuesMap.keys());
-
     for (let i = 0; i < dates.length; i++) {
       const todayDate = dates[i];
       const todayData = lastValuesMap.get(todayDate);
       const yesterdayData = lastValuesMap.get(dates[i - 1]);
 
-      if (yesterdayData) {
+      // If mqttTopicPrefix is not solar_assistant_DEYE, push data as is
+      if (todayData.mqttTopicPrefix !== 'solar_assistant_DEYE') {
+        updatedResult.push({
+          date: todayDate,
+          pvPower: todayData.pvPower,
+          loadPower: todayData.loadPower,
+          gridIn: todayData.gridIn,
+          gridOut: todayData.gridOut,
+          batteryCharged: todayData.batteryCharged,
+          batteryDischarged: todayData.batteryDischarged,
+        });
+        continue;
+      }
+
+      // Calculate differences only for solar_assistant_DEYE entries
+      if (
+        yesterdayData &&
+        yesterdayData.mqttTopicPrefix === 'solar_assistant_DEYE'
+      ) {
         updatedResult.push({
           date: todayDate,
           pvPower: this.calculateDifference(
@@ -183,7 +206,6 @@ export class EnergyService {
 
     return updatedResult;
   }
-
   private adjustTotalsWithYesterdayData(
     totalForDate: TotalEnergy,
     yesterdayTotals: TotalEnergy,
@@ -325,6 +347,7 @@ export class EnergyService {
           ),
           topic: null,
           port: userPorts?.port || '',
+          mqttTopicPrefix: '',
           userId: user.id,
         });
       }
@@ -548,6 +571,7 @@ export class EnergyService {
         topic: null,
         port: userPorts?.port || '',
         userId: user.id,
+        mqttTopicPrefix: '',
       }),
     );
 
