@@ -45,7 +45,20 @@ export class RedexService {
       const todayData = lastValuesMap.get(todayDate);
       const yesterdayData = lastValuesMap.get(dates[i - 1]);
 
-      if (yesterdayData) {
+      // If mqttTopicPrefix is not solar_assistant_DEYE, push data as is
+      if (todayData.mqttTopicPrefix !== 'solar_assistant_DEYE') {
+        updatedResult.push({
+          date: todayDate,
+          pvPower: todayData.pvPower,
+        });
+        continue;
+      }
+
+      // Calculate differences only for solar_assistant_DEYE entries
+      if (
+        yesterdayData &&
+        yesterdayData.mqttTopicPrefix === 'solar_assistant_DEYE'
+      ) {
         const pvPowerDifference = (
           parseFloat(todayData.pvPower) - parseFloat(yesterdayData.pvPower)
         ).toFixed(2);
