@@ -56,6 +56,7 @@ export class EnergyService {
   }
 
   private async adjustTotals(result: TotalEnergy[]): Promise<TotalEnergy[]> {
+    // Sort results by date
     result.sort(
       (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime(),
     );
@@ -80,7 +81,18 @@ export class EnergyService {
       const todayDate = parseISO(todayData.date);
       const yesterdayDate = parseISO(yesterdayData.date);
 
-      if (todayDate > yesterdayDate) {
+      // Check if all values are greater
+      const isAllGreater =
+        parseFloat(todayData.pvPower) > parseFloat(yesterdayData.pvPower) &&
+        parseFloat(todayData.loadPower) > parseFloat(yesterdayData.loadPower) &&
+        parseFloat(todayData.gridIn) > parseFloat(yesterdayData.gridIn) &&
+        parseFloat(todayData.gridOut) > parseFloat(yesterdayData.gridOut) &&
+        parseFloat(todayData.batteryCharged) >
+          parseFloat(yesterdayData.batteryCharged) &&
+        parseFloat(todayData.batteryDischarged) >
+          parseFloat(yesterdayData.batteryDischarged);
+
+      if (todayDate > yesterdayDate && isAllGreater) {
         const getDifference = (today: string, yesterday: string) =>
           (parseFloat(today) - parseFloat(yesterday)).toFixed(2);
 
@@ -113,12 +125,12 @@ export class EnergyService {
   private async adjustMonthlyTotals(
     result: TotalEnergy[],
   ): Promise<Array<DailyEntry>> {
+    // Sort results by date
     result.sort(
       (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime(),
     );
 
     const lastValuesMap = new Map<string, TotalEnergy>();
-
     for (const entry of result) {
       lastValuesMap.set(entry.date, entry);
     }
@@ -141,34 +153,60 @@ export class EnergyService {
       const yesterdayData = lastValuesMap.get(dates[i - 1]);
 
       if (yesterdayData) {
-        updatedResult.push({
-          date: todayDate,
-          pvPower: this.calculateDifference(
-            todayData.pvPower,
-            yesterdayData.pvPower,
-          ),
-          loadPower: this.calculateDifference(
-            todayData.loadPower,
-            yesterdayData.loadPower,
-          ),
-          gridIn: this.calculateDifference(
-            todayData.gridIn,
-            yesterdayData.gridIn,
-          ),
-          gridOut: this.calculateDifference(
-            todayData.gridOut,
-            yesterdayData.gridOut,
-          ),
-          batteryCharged: this.calculateDifference(
-            todayData.batteryCharged,
-            yesterdayData.batteryCharged,
-          ),
-          batteryDischarged: this.calculateDifference(
-            todayData.batteryDischarged,
-            yesterdayData.batteryDischarged,
-          ),
-        });
+        // Check if all values are greater
+        const isAllGreater =
+          parseFloat(todayData.pvPower) > parseFloat(yesterdayData.pvPower) &&
+          parseFloat(todayData.loadPower) >
+            parseFloat(yesterdayData.loadPower) &&
+          parseFloat(todayData.gridIn) > parseFloat(yesterdayData.gridIn) &&
+          parseFloat(todayData.gridOut) > parseFloat(yesterdayData.gridOut) &&
+          parseFloat(todayData.batteryCharged) >
+            parseFloat(yesterdayData.batteryCharged) &&
+          parseFloat(todayData.batteryDischarged) >
+            parseFloat(yesterdayData.batteryDischarged);
+
+        if (isAllGreater) {
+          updatedResult.push({
+            date: todayDate,
+            pvPower: this.calculateDifference(
+              todayData.pvPower,
+              yesterdayData.pvPower,
+            ),
+            loadPower: this.calculateDifference(
+              todayData.loadPower,
+              yesterdayData.loadPower,
+            ),
+            gridIn: this.calculateDifference(
+              todayData.gridIn,
+              yesterdayData.gridIn,
+            ),
+            gridOut: this.calculateDifference(
+              todayData.gridOut,
+              yesterdayData.gridOut,
+            ),
+            batteryCharged: this.calculateDifference(
+              todayData.batteryCharged,
+              yesterdayData.batteryCharged,
+            ),
+            batteryDischarged: this.calculateDifference(
+              todayData.batteryDischarged,
+              yesterdayData.batteryDischarged,
+            ),
+          });
+        } else {
+          // If not all values are greater, push the original data
+          updatedResult.push({
+            date: todayDate,
+            pvPower: todayData.pvPower,
+            loadPower: todayData.loadPower,
+            gridIn: todayData.gridIn,
+            gridOut: todayData.gridOut,
+            batteryCharged: todayData.batteryCharged,
+            batteryDischarged: todayData.batteryDischarged,
+          });
+        }
       } else {
+        // For the first entry or entries without a previous day
         updatedResult.push({
           date: todayDate,
           pvPower: todayData.pvPower,
@@ -182,53 +220,6 @@ export class EnergyService {
     }
 
     return updatedResult;
-  }
-
-  private adjustTotalsWithYesterdayData(
-    totalForDate: TotalEnergy,
-    yesterdayTotals: TotalEnergy,
-  ): TotalEnergy {
-    const adjustedTotals: TotalEnergy = {
-      ...totalForDate,
-      pvPower: this.calculateDifferenceOrRetain(
-        parseFloat(totalForDate.pvPower),
-        parseFloat(yesterdayTotals.pvPower),
-      ),
-      loadPower: this.calculateDifferenceOrRetain(
-        parseFloat(totalForDate.loadPower),
-        parseFloat(yesterdayTotals.loadPower),
-      ),
-      gridIn: this.calculateDifferenceOrRetain(
-        parseFloat(totalForDate.gridIn),
-        parseFloat(yesterdayTotals.gridIn),
-      ),
-      gridOut: this.calculateDifferenceOrRetain(
-        parseFloat(totalForDate.gridOut),
-        parseFloat(yesterdayTotals.gridOut),
-      ),
-      batteryCharged: this.calculateDifferenceOrRetain(
-        parseFloat(totalForDate.batteryCharged),
-        parseFloat(yesterdayTotals.batteryCharged),
-      ),
-      batteryDischarged: this.calculateDifferenceOrRetain(
-        parseFloat(totalForDate.batteryDischarged),
-        parseFloat(yesterdayTotals.batteryDischarged),
-      ),
-    };
-    return adjustedTotals;
-  }
-
-  private calculateDifferenceOrRetain(
-    todayValue: number,
-    yesterdayValue: number,
-  ): string {
-    return (
-      todayValue > yesterdayValue ? todayValue - yesterdayValue : todayValue
-    ).toFixed(2);
-  }
-
-  private isZeroTotal(total: TotalEnergy): boolean {
-    return Object.values(total).every((value) => value === '0');
   }
 
   private async getTotalsForDateRange(
@@ -278,59 +269,7 @@ export class EnergyService {
       },
     });
 
-    const result: Array<TotalEnergy> = [];
-    for (let i = 0; i < days; i++) {
-      const currentDate = subDays(today, i);
-      const formattedDate = formatInTimeZone(
-        startOfDay(currentDate),
-        timezone,
-        'yyyy-MM-dd',
-      );
-
-      let totalForDate = totals.find(
-        (t) =>
-          formatInTimeZone(parseISO(t.date), timezone, 'yyyy-MM-dd') ===
-            formattedDate && !this.isZeroTotal(t),
-      );
-
-      const previousDate = subDays(currentDate, 1);
-      const yesterdayTotals = totals.find(
-        (t) =>
-          formatInTimeZone(parseISO(t.date), timezone, 'yyyy-MM-dd') ===
-          formatInTimeZone(previousDate, timezone, 'yyyy-MM-dd'),
-      );
-
-      if (totalForDate && yesterdayTotals) {
-        totalForDate = this.adjustTotalsWithYesterdayData(
-          totalForDate,
-          yesterdayTotals,
-        );
-      }
-
-      if (totalForDate) {
-        result.push(totalForDate);
-      } else {
-        result.push({
-          id: uuidv4(),
-          pvPower: '0',
-          loadPower: '0',
-          gridIn: '0',
-          gridOut: '0',
-          batteryCharged: '0',
-          batteryDischarged: '0',
-          date: formatInTimeZone(
-            startOfDay(currentDate),
-            timezone,
-            "yyyy-MM-dd'T'HH:mm:ssXXX",
-          ),
-          topic: null,
-          port: userPorts?.port || '',
-          userId: user.id,
-        });
-      }
-    }
-
-    return this.adjustTotals(result.reverse());
+    return this.adjustTotals(totals.reverse());
   }
 
   async getTotalsEnergy(
@@ -548,6 +487,7 @@ export class EnergyService {
         topic: null,
         port: userPorts?.port || '',
         userId: user.id,
+        mqttTopicPrefix: null,
       }),
     );
 
