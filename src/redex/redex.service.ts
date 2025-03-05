@@ -27,12 +27,12 @@ export class RedexService {
   ) {}
 
   private async adjustTotals(result: TotalEnergy[]) {
+    // Sort results by date
     result.sort(
       (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime(),
     );
 
     const lastValuesMap = new Map<string, TotalEnergy>();
-
     for (const entry of result) {
       lastValuesMap.set(entry.date, entry);
     }
@@ -45,24 +45,13 @@ export class RedexService {
       const todayData = lastValuesMap.get(todayDate);
       const yesterdayData = lastValuesMap.get(dates[i - 1]);
 
-      // If mqttTopicPrefix is not solar_assistant_DEYE, push data as is
-      if (todayData.mqttTopicPrefix !== 'solar_assistant_DEYE') {
-        updatedResult.push({
-          date: todayDate,
-          pvPower: todayData.pvPower,
-        });
-        continue;
-      }
-
-      // Calculate differences only for solar_assistant_DEYE entries
-      if (
-        yesterdayData &&
-        yesterdayData.mqttTopicPrefix === 'solar_assistant_DEYE'
-      ) {
+      if (yesterdayData) {
+        // Calculate difference
         const pvPowerDifference = (
           parseFloat(todayData.pvPower) - parseFloat(yesterdayData.pvPower)
         ).toFixed(2);
 
+        // Only use difference if it's greater than zero
         updatedResult.push({
           date: todayDate,
           pvPower:
@@ -71,6 +60,7 @@ export class RedexService {
               : todayData.pvPower,
         });
       } else {
+        // For the first entry or entries without a previous day
         updatedResult.push({
           date: todayDate,
           pvPower: todayData.pvPower,
