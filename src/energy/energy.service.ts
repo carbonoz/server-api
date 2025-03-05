@@ -65,7 +65,7 @@ export class EnergyService {
 
     for (let i = 0; i < result.length; i++) {
       const todayData = result[i];
-      const yesterdayData = result[i + 1] || {
+      const yesterdayData = result[i - 1] || {
         pvPower: '0',
         loadPower: '0',
         gridIn: '0',
