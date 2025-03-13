@@ -36,4 +36,14 @@ export class StepsService {
       },
     });
   }
+
+  async skipStep(dto: RegisterStep, user: User) {
+    return await this.prismaService.userSteps.create({
+      data: {
+        ...dto,
+        userId: user.id,
+        hasSkipped: true,
+      },
+    });
+  }
 }
