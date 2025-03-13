@@ -54,4 +54,15 @@ export class StepsController {
     const result = await this.stepsService.getUserStep(user);
     return new GenericResponse('step retrieved', result);
   }
+
+  @ApiOkResponse({
+    description: 'user skipped step  successfully',
+  })
+  @ApiOperation({ summary: 'user skip steps' })
+  @ApiBody({ type: RegisterStep })
+  @Post('skip-step')
+  async skipSteps(@Body() dto: RegisterStep, @GetUser() user: User) {
+    const result = await this.stepsService.skipStep(dto, user);
+    return new GenericResponse('step skipped', result);
+  }
 }
