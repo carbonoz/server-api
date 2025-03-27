@@ -9,7 +9,7 @@ import { MailsService } from './mails.service';
   imports: [
     MailerModule.forRoot({
       transport: {
-        host: 'mx1.bunkersuites.com',
+        host: '192.168.160.66',
         port: 465,
         secure: true,
         tls: {
