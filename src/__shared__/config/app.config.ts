@@ -23,6 +23,14 @@ export function appConfig(): IAppConfig {
       email: process.env.ADMIN_EMAIL,
       password: process.env.ADMIN_PASSWORD,
     },
+    carbonDensityUrl: process.env.CARBON_DENSITY_URL,
+    payPal: {
+      clientId: process.env.PAYPAL_CLIENT_ID,
+      clientSecret: process.env.PAYPAL_CLIENT_SECRET,
+      brandName: process.env.PAYPAL_BRAND_NAME || 'Your Store',
+      webhookUrl: process.env.PAYPAL_WEBHOOK_URL,
+      webhookId: process.env.PAYPAL_WEBHOOK_ID,
+    },
   };
 }
 

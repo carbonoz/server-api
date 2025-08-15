@@ -26,6 +26,8 @@ import { StepsModule } from './steps/steps.module';
 import { SystemstepsModule } from './systemsteps/systemsteps.module';
 import { TopicModule } from './topic/topic.module';
 import { UserModule } from './user/user.module';
+import { DensityModule } from './density/density.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { UserModule } from './user/user.module';
     ReportsModule,
     AdminModule,
     LogsModule,
+    DensityModule,
+    PaymentModule,
   ],
   controllers: [],
   providers: [

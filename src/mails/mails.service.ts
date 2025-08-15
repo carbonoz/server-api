@@ -24,6 +24,7 @@ export class MailsService {
       });
       if (emailSent) return { message: 'Email sent successfully' };
     } catch (error) {
+      console.error('Error sending email:', error);
       throw new InternalServerErrorException({ error });
     }
   }

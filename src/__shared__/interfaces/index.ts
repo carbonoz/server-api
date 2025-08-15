@@ -7,6 +7,14 @@ export interface IAppConfig {
   redex?: IRedexConfig;
   frontedUrl: string;
   admin: amdinConfig;
+  carbonDensityUrl: string;
+  payPal?: {
+    clientId: string;
+    clientSecret: string;
+    brandName?: string;
+    webhookUrl?: string;
+    webhookId?: string;
+  };
 }
 
 interface JwtConfig {

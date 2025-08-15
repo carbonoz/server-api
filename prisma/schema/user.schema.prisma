@@ -25,6 +25,8 @@ model User {
   UserCredentials      UserCredentials[]
   Logs                 Logs[]
   RedexRegisterDevice  RedexRegisterDevice[]
+  userKey              userKey?
+  Payment              Payment[]
 }
 
 model UserInformation {

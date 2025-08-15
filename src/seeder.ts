@@ -22,6 +22,8 @@ export class SeedData implements OnModuleInit {
 
   async seedOnInit() {
     try {
+      // await this.prismaService.logs.deleteMany({});
+
       const admin = await this.prismaService.user.findFirst({
         where: { role: ERole.ADMIN },
       });

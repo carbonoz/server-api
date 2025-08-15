@@ -40,3 +40,16 @@ enum ELogType {
   API_REQUEST
   SOCKET_EVENT
 }
+
+enum EPaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum EPaymentMethod {
+  PAYPAL
+  STRIPE
+}
